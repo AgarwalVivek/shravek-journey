@@ -24,98 +24,97 @@ module.exports = async function (context, req) {
   try {
     switch (action) {
       case "photos":
-        if (req.method === "GET") return handleGetPhotos(context, req);
-        if (req.method === "POST") return handleAddPhoto(context, req);
-        if (req.method === "DELETE") return handleDeletePhoto(context, req);
+        if (req.method === "GET") return await handleGetPhotos(context, req);
+        if (req.method === "POST") return await handleAddPhoto(context, req);
+        if (req.method === "DELETE") return await handleDeletePhoto(context, req);
         break;
 
       case "timeline":
-        if (req.method === "GET") return handleGetByCategory(context, "timeline");
-        if (req.method === "POST") return handleAddItem(context, req, "timeline");
-        if (req.method === "DELETE") return handleDeleteItem(context, req);
+        if (req.method === "GET") return await handleGetByCategory(context, "timeline");
+        if (req.method === "POST") return await handleAddItem(context, req, "timeline");
+        if (req.method === "DELETE") return await handleDeleteItem(context, req);
         break;
 
       case "travel":
-        if (req.method === "GET") return handleGetByCategory(context, "travel");
-        if (req.method === "POST") return handleAddItem(context, req, "travel");
-        if (req.method === "DELETE") return handleDeleteItem(context, req);
+        if (req.method === "GET") return await handleGetByCategory(context, "travel");
+        if (req.method === "POST") return await handleAddItem(context, req, "travel");
+        if (req.method === "DELETE") return await handleDeleteItem(context, req);
         break;
 
       case "baby":
-        if (req.method === "GET") return handleGetByCategory(context, "baby");
-        if (req.method === "POST") return handleAddItem(context, req, "baby");
-        if (req.method === "DELETE") return handleDeleteItem(context, req);
+        if (req.method === "GET") return await handleGetByCategory(context, "baby");
+        if (req.method === "POST") return await handleAddItem(context, req, "baby");
+        if (req.method === "DELETE") return await handleDeleteItem(context, req);
         break;
 
       case "all":
-        return handleGetAll(context);
+        return await handleGetAll(context);
 
       default:
         context.res = {
           status: 404,
           headers: { "Content-Type": "application/json" },
-          body: { success: false, error: "Unknown action: " + action }
+          body: JSON.stringify({ success: false, error: "Unknown action: " + action })
         };
     }
   } catch (error) {
-    context.log.error("API error:", error);
+    context.log.error("API error:", error.message, error.stack);
     context.res = {
       status: 500,
       headers: { "Content-Type": "application/json" },
-      body: { success: false, error: error.message }
+      body: JSON.stringify({ success: false, error: error.message })
     };
   }
 };
 
-// ── Get all data (for initial page load) ─────────────────
 async function handleGetAll(context) {
   const container = getContainer();
 
   const { resources } = await container.items
-    .query("SELECT * FROM c ORDER BY c.order ASC")
+    .query("SELECT * FROM c", { enableCrossPartitionQuery: true })
     .fetchAll();
 
+  const sorted = resources.sort((a, b) => (a.order || 0) - (b.order || 0));
+
   const grouped = {
-    timeline: resources.filter(r => r.category === "timeline"),
-    travel: resources.filter(r => r.category === "travel"),
-    baby: resources.filter(r => r.category === "baby"),
-    photos: resources.filter(r => r.category === "photo")
+    timeline: sorted.filter(r => r.category === "timeline"),
+    travel: sorted.filter(r => r.category === "travel"),
+    baby: sorted.filter(r => r.category === "baby"),
+    photos: sorted.filter(r => r.category === "photo")
   };
 
   context.res = {
     status: 200,
     headers: { "Content-Type": "application/json" },
-    body: { success: true, data: grouped }
+    body: JSON.stringify({ success: true, data: grouped })
   };
 }
 
-// ── Get photos (optionally filtered by album) ────────────
 async function handleGetPhotos(context, req) {
   const container = getContainer();
   const album = req.query && req.query.album;
 
   let query = "SELECT * FROM c WHERE c.category = 'photo'";
-  const params = [{ name: "@cat", value: "photo" }];
+  const params = [];
 
   if (album) {
-    query = "SELECT * FROM c WHERE c.category = 'photo' AND c.album = @album ORDER BY c.order ASC";
+    query = "SELECT * FROM c WHERE c.category = 'photo' AND c.album = @album";
     params.push({ name: "@album", value: album });
-  } else {
-    query += " ORDER BY c.order ASC";
   }
 
   const { resources } = await container.items
     .query({ query, parameters: params })
     .fetchAll();
 
+  const sorted = resources.sort((a, b) => (a.order || 0) - (b.order || 0));
+
   context.res = {
     status: 200,
     headers: { "Content-Type": "application/json" },
-    body: { success: true, photos: resources }
+    body: JSON.stringify({ success: true, photos: sorted })
   };
 }
 
-// ── Add a photo ──────────────────────────────────────────
 async function handleAddPhoto(context, req) {
   const body = req.body || {};
 
@@ -123,7 +122,7 @@ async function handleAddPhoto(context, req) {
     context.res = {
       status: 400,
       headers: { "Content-Type": "application/json" },
-      body: { success: false, error: "Photo URL is required." }
+      body: JSON.stringify({ success: false, error: "Photo URL is required." })
     };
     return;
   }
@@ -144,18 +143,17 @@ async function handleAddPhoto(context, req) {
   context.res = {
     status: 200,
     headers: { "Content-Type": "application/json" },
-    body: { success: true, photo }
+    body: JSON.stringify({ success: true, photo })
   };
 }
 
-// ── Delete a photo ───────────────────────────────────────
 async function handleDeletePhoto(context, req) {
   const id = req.query && req.query.id;
   if (!id) {
     context.res = {
       status: 400,
       headers: { "Content-Type": "application/json" },
-      body: { success: false, error: "Photo ID is required." }
+      body: JSON.stringify({ success: false, error: "Photo ID is required." })
     };
     return;
   }
@@ -166,29 +164,29 @@ async function handleDeletePhoto(context, req) {
   context.res = {
     status: 200,
     headers: { "Content-Type": "application/json" },
-    body: { success: true, message: "Photo deleted." }
+    body: JSON.stringify({ success: true, message: "Photo deleted." })
   };
 }
 
-// ── Get items by category ────────────────────────────────
 async function handleGetByCategory(context, category) {
   const container = getContainer();
 
   const { resources } = await container.items
     .query({
-      query: "SELECT * FROM c WHERE c.category = @cat ORDER BY c.order ASC",
+      query: "SELECT * FROM c WHERE c.category = @cat",
       parameters: [{ name: "@cat", value: category }]
     })
     .fetchAll();
 
+  const sorted = resources.sort((a, b) => (a.order || 0) - (b.order || 0));
+
   context.res = {
     status: 200,
     headers: { "Content-Type": "application/json" },
-    body: { success: true, items: resources }
+    body: JSON.stringify({ success: true, items: sorted })
   };
 }
 
-// ── Add item (timeline/travel/baby) ──────────────────────
 async function handleAddItem(context, req, category) {
   const body = req.body || {};
 
@@ -199,7 +197,6 @@ async function handleAddItem(context, req, category) {
     createdAt: new Date().toISOString()
   };
 
-  // Ensure category is set correctly (overrides any body.category)
   item.category = category;
 
   const container = getContainer();
@@ -208,11 +205,10 @@ async function handleAddItem(context, req, category) {
   context.res = {
     status: 200,
     headers: { "Content-Type": "application/json" },
-    body: { success: true, item }
+    body: JSON.stringify({ success: true, item })
   };
 }
 
-// ── Delete item ──────────────────────────────────────────
 async function handleDeleteItem(context, req) {
   const id = req.query && req.query.id;
   const category = req.query && req.query.category;
@@ -221,7 +217,7 @@ async function handleDeleteItem(context, req) {
     context.res = {
       status: 400,
       headers: { "Content-Type": "application/json" },
-      body: { success: false, error: "ID and category are required." }
+      body: JSON.stringify({ success: false, error: "ID and category are required." })
     };
     return;
   }
@@ -232,6 +228,6 @@ async function handleDeleteItem(context, req) {
   context.res = {
     status: 200,
     headers: { "Content-Type": "application/json" },
-    body: { success: true, message: "Item deleted." }
+    body: JSON.stringify({ success: true, message: "Item deleted." })
   };
 }
