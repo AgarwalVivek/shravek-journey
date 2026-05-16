@@ -92,16 +92,22 @@
       const data = await res.json();
       if (data.success && data.rsvps && data.rsvps.length > 0) {
         const rsvp = data.rsvps[0];
+        // Show a highlighted confirmation banner
+        const lookup = document.getElementById('rsvp-lookup');
+        lookup.innerHTML = `
+          <div style="background:linear-gradient(135deg,#d4edda,#c3e6cb);border:2px solid #28a745;border-radius:10px;padding:1.25rem 1.5rem;text-align:center">
+            <div style="font-size:1.5rem;margin-bottom:0.5rem">🎉 Welcome back, ${rsvp.name || 'friend'}!</div>
+            <p style="font-size:0.9rem;color:#155724;margin:0">You've already RSVP'd with <strong>${rsvp.guests || 1} guest(s)</strong>. You can update your details or cancel below.</p>
+          </div>
+        `;
         // Fill form with existing data
         document.getElementById('rsvp-id').value = rsvp.id;
         document.getElementById('rsvp-name').value = rsvp.name || '';
         document.getElementById('rsvp-email').value = rsvp.email || '';
         document.getElementById('rsvp-guests').value = rsvp.guests || 1;
         document.getElementById('rsvp-message').value = rsvp.message || '';
-        document.getElementById('rsvp-submit-btn').textContent = 'Update RSVP';
+        document.getElementById('rsvp-submit-btn').textContent = '✨ Update My RSVP';
         document.getElementById('rsvp-cancel-btn').style.display = 'inline-block';
-        status.textContent = '✅ Found your RSVP! Edit below and click Update.';
-        status.style.color = '#2a7c4f';
       } else {
         status.textContent = 'No existing RSVP found. Fill out the form below to RSVP!';
         status.style.color = 'var(--muted)';
