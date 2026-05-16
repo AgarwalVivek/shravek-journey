@@ -311,19 +311,30 @@
         <div class="admin-card" style="margin-bottom:2rem">
           <h3 class="admin-card__title">🖼️ Homepage Hero Photos</h3>
           <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">
-            Set the two large photos that appear on the homepage hero section. 
-            Paste the full URL from your Azure Blob Storage or any image host.
+            Upload photos directly or paste a URL. Uploaded photos are stored in Azure Blob Storage automatically.
           </p>
           <div id="hero-preview" style="display:flex;gap:1.5rem;margin-bottom:1.5rem;flex-wrap:wrap">
             <div style="flex:1;min-width:200px;text-align:center">
               <img id="hero-left-preview" src="" alt="Left photo" style="max-height:200px;border-radius:8px;border:2px dashed #ccc;display:none" />
-              <div id="hero-left-placeholder" style="height:200px;border:2px dashed #ccc;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:0.9rem">No photo set</div>
+              <div id="hero-left-placeholder" style="height:200px;border:2px dashed #ccc;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:0.9rem;cursor:pointer;position:relative;overflow:hidden" onclick="document.getElementById('hero-left-file').click()">
+                <span>Click to upload<br/>or drag & drop</span>
+                <input type="file" id="hero-left-file" accept="image/*" style="display:none" onchange="uploadHeroPhoto('left', this.files[0])" />
+              </div>
               <p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem">Left Panel</p>
+              <div id="hero-left-progress" style="display:none;margin-top:0.25rem">
+                <div style="background:#e2e8f0;border-radius:4px;height:4px;overflow:hidden"><div id="hero-left-bar" style="background:var(--teal);height:100%;width:0%;transition:width 0.3s"></div></div>
+              </div>
             </div>
             <div style="flex:1;min-width:200px;text-align:center">
               <img id="hero-right-preview" src="" alt="Right photo" style="max-height:200px;border-radius:8px;border:2px dashed #ccc;display:none" />
-              <div id="hero-right-placeholder" style="height:200px;border:2px dashed #ccc;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:0.9rem">No photo set</div>
+              <div id="hero-right-placeholder" style="height:200px;border:2px dashed #ccc;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:0.9rem;cursor:pointer;position:relative;overflow:hidden" onclick="document.getElementById('hero-right-file').click()">
+                <span>Click to upload<br/>or drag & drop</span>
+                <input type="file" id="hero-right-file" accept="image/*" style="display:none" onchange="uploadHeroPhoto('right', this.files[0])" />
+              </div>
               <p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem">Right Panel</p>
+              <div id="hero-right-progress" style="display:none;margin-top:0.25rem">
+                <div style="background:#e2e8f0;border-radius:4px;height:4px;overflow:hidden"><div id="hero-right-bar" style="background:var(--teal);height:100%;width:0%;transition:width 0.3s"></div></div>
+              </div>
             </div>
           </div>
           <form onsubmit="saveHeroPhotos(event)">

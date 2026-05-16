@@ -431,6 +431,74 @@
     }
   });
 
+  // Upload hero photo directly
+  window.uploadHeroPhoto = async function (side, file) {
+    if (!file) return;
+    const status = document.getElementById('hero-save-status');
+    const progressDiv = document.getElementById('hero-' + side + '-progress');
+    const progressBar = document.getElementById('hero-' + side + '-bar');
+
+    status.textContent = '⏳ Uploading ' + file.name + '...';
+    status.style.color = 'var(--muted)';
+    progressDiv.style.display = 'block';
+    progressBar.style.width = '10%';
+
+    try {
+      // Get SAS upload URL from API
+      const sasRes = await fetch(API + '/upload-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName: 'hero-' + side + '-' + Date.now() + '.' + file.name.split('.').pop(), contentType: file.type, folder: 'hero' })
+      });
+      const sasData = await sasRes.json();
+      if (!sasData.success) throw new Error(sasData.error || 'Failed to get upload URL');
+      progressBar.style.width = '30%';
+
+      // Upload directly to blob storage
+      const uploadRes = await fetch(sasData.uploadUrl, {
+        method: 'PUT',
+        headers: { 'x-ms-blob-type': 'BlockBlob', 'Content-Type': file.type },
+        body: file
+      });
+      if (!uploadRes.ok) throw new Error('Upload failed: ' + uploadRes.status);
+      progressBar.style.width = '80%';
+
+      // Set the URL in the form
+      document.getElementById('hero-photo-' + side).value = sasData.blobUrl;
+
+      // Update preview
+      const preview = document.getElementById('hero-' + side + '-preview');
+      const placeholder = document.getElementById('hero-' + side + '-placeholder');
+      preview.src = sasData.blobUrl;
+      preview.style.display = 'block';
+      placeholder.style.display = 'none';
+
+      progressBar.style.width = '100%';
+      status.textContent = '✅ Uploaded! Click "Save Hero Photos" to apply.';
+      status.style.color = '#2a7c4f';
+      setTimeout(() => { progressDiv.style.display = 'none'; }, 2000);
+    } catch (e) {
+      status.textContent = '❌ Upload failed: ' + e.message;
+      status.style.color = '#991b1b';
+      progressDiv.style.display = 'none';
+    }
+  };
+
+  // Drag & drop support for hero photo panels
+  ['left', 'right'].forEach(side => {
+    const placeholder = document.getElementById('hero-' + side + '-placeholder');
+    if (!placeholder) return;
+    placeholder.addEventListener('dragover', (e) => { e.preventDefault(); placeholder.style.borderColor = 'var(--teal)'; placeholder.style.background = 'rgba(74,124,126,0.05)'; });
+    placeholder.addEventListener('dragleave', () => { placeholder.style.borderColor = '#ccc'; placeholder.style.background = ''; });
+    placeholder.addEventListener('drop', (e) => {
+      e.preventDefault();
+      placeholder.style.borderColor = '#ccc';
+      placeholder.style.background = '';
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) uploadHeroPhoto(side, file);
+    });
+  });
+
   window.saveHeroPhotos = async function (e) {
     e.preventDefault();
     const status = document.getElementById('hero-save-status');

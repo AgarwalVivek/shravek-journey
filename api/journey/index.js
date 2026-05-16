@@ -2,6 +2,7 @@ const { CosmosClient } = require("@azure/cosmos");
 const crypto = require("crypto");
 const { authenticator } = require("otplib");
 const QRCode = require("qrcode");
+const { BlobServiceClient, generateBlobSASQueryParameters, BlobSASPermissions, StorageSharedKeyCredential } = require("@azure/storage-blob");
 
 let cosmosContainer;
 
@@ -122,6 +123,10 @@ module.exports = async function (context, req) {
 
       case "2fa-status":
         if (req.method === "GET") return await handleGet2FAStatus(context, req);
+        break;
+
+      case "upload-url":
+        if (req.method === "POST") return await handleGetUploadUrl(context, req);
         break;
 
       case "all":
@@ -902,6 +907,57 @@ async function savePhotoWithAlbum(context, url, caption, album, aiTags, faceCoun
     status: 200,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ success: true, photo })
+  };
+}
+
+// --- Blob Upload SAS URL Generator ---
+
+async function handleGetUploadUrl(context, req) {
+  const { fileName, contentType, folder } = req.body || {};
+  if (!fileName) {
+    context.res = { status: 400, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: "fileName is required." }) };
+    return;
+  }
+
+  const connStr = process.env.STORAGE_CONNECTION_STRING;
+  if (!connStr) {
+    context.res = { status: 500, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: "Storage not configured." }) };
+    return;
+  }
+
+  // Parse connection string for account name and key
+  const parts = {};
+  connStr.split(";").forEach(part => {
+    const [key, ...vals] = part.split("=");
+    parts[key] = vals.join("=");
+  });
+  const accountName = parts["AccountName"];
+  const accountKey = parts["AccountKey"];
+  const containerName = "photos";
+
+  const credential = new StorageSharedKeyCredential(accountName, accountKey);
+  const blobName = folder ? `${folder}/${fileName}` : fileName;
+
+  // Generate SAS token valid for 10 minutes
+  const startsOn = new Date();
+  const expiresOn = new Date(startsOn.getTime() + 10 * 60 * 1000);
+
+  const sasToken = generateBlobSASQueryParameters({
+    containerName,
+    blobName,
+    permissions: BlobSASPermissions.parse("cw"),
+    startsOn,
+    expiresOn,
+    contentType: contentType || "application/octet-stream"
+  }, credential).toString();
+
+  const blobUrl = `https://${accountName}.blob.core.windows.net/${containerName}/${blobName}`;
+  const uploadUrl = `${blobUrl}?${sasToken}`;
+
+  context.res = {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ success: true, uploadUrl, blobUrl })
   };
 }
 
