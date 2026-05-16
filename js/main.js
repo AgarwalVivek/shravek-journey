@@ -120,9 +120,11 @@ function renderBaby() {
 function renderAlbumPhotos(album) {
   const photos = (journeyData.photos || []).filter(p => p.album === album);
   if (photos.length === 0) return '';
-  return `<div class="timeline-album-grid">${photos.map(p =>
-    `<img src="${p.url}" alt="${p.caption || album}" class="timeline-album-grid__img" />`
-  ).join('')}</div>`;
+  return `
+    <button class="timeline-album-toggle" onclick="this.nextElementSibling.classList.toggle('open');this.textContent=this.nextElementSibling.classList.contains('open')?'Hide Photos ▲':'View Photos ▼'">View Photos ▼</button>
+    <div class="timeline-album-grid">${photos.map(p =>
+      `<img src="${p.url}" alt="${p.caption || album}" class="timeline-album-grid__img" loading="lazy" />`
+    ).join('')}</div>`;
 }
 
 // ── Render Gallery ───────────────────────────────────────
