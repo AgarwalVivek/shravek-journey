@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shravek Journey</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="nav" id="navbar">
+    <div class="nav__logo">Shravek</div>
+    <ul class="nav__links">
+      <li><a href="#timeline">Timeline</a></li>
+      <li><a href="#travel">Travel</a></li>
+      <li><a href="#baby">Baby</a></li>
+      <li><a href="#gallery">Gallery</a></li>
+    </ul>
+    <button class="nav__burger" id="burger" aria-label="Menu">&#9776;</button>
+  </nav>
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="hero__overlay"></div>
+    <div class="hero__content">
+      <p class="hero__eyebrow">Our Story Together</p>
+      <h1 class="hero__title">Shravek<br /><em>Journey</em></h1>
+      <p class="hero__sub">Every moment, every milestone — our life in one beautiful timeline</p>
+      <a href="#timeline" class="btn btn--light">Explore Our Journey</a>
+    </div>
+  </header>
+
+  <!-- TIMELINE -->
+  <section class="section" id="timeline">
+    <div class="section__header">
+      <p class="section__eyebrow">Milestones</p>
+      <h2 class="section__title">Our Timeline</h2>
+      <p class="section__desc">The moments that define us — from the very beginning to today.</p>
+    </div>
+    <div class="timeline" id="timeline-container"></div>
+  </section>
+
+  <!-- TRAVEL -->
+  <section class="section section--dark" id="travel">
+    <div class="section__header">
+      <p class="section__eyebrow">Adventures</p>
+      <h2 class="section__title">Places We've Been</h2>
+      <p class="section__desc">Exploring the world together, one destination at a time.</p>
+    </div>
+    <div class="travel-grid" id="travel-grid"></div>
+  </section>
+
+  <!-- BABY -->
+  <section class="section" id="baby">
+    <div class="section__header">
+      <p class="section__eyebrow">Little One</p>
+      <h2 class="section__title">Baby Journey</h2>
+      <p class="section__desc">Watching our little miracle grow — month by month.</p>
+    </div>
+    <div class="baby-grid" id="baby-grid"></div>
+  </section>
+
+  <!-- GALLERY -->
+  <section class="section section--ivory" id="gallery">
+    <div class="section__header">
+      <p class="section__eyebrow">Memories</p>
+      <h2 class="section__title">Photo Gallery</h2>
+    </div>
+    <div class="gallery-grid" id="gallery-grid"></div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer__logo">Shravek</div>
+    <p class="footer__tag">Our journey, our story</p>
+    <p class="footer__copy">&copy; 2025 Shravek Journey. Made with ❤️</p>
+  </footer>
+
+  <script src="js/data.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
