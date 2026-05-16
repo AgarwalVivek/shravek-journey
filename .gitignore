@@ -5,3 +5,5 @@ node_modules/
 api/node_modules/
 api/package-lock.json
 api/seed-data.js
+
+api-deploy.zip
