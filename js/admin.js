@@ -230,7 +230,7 @@
       list.innerHTML = items.map(item => `
         <div class="admin-item">
           <div class="admin-item__info">
-            <h3>${item.name} — ₹${item.price || '?'}</h3>
+            <h3>${item.name} — ${item.price || '?'}</h3>
             <p>${item.claimed || item.status === 'gone' ? '✅ Claimed by <strong>' + (item.claimedBy || '?') + '</strong> (' + (item.claimedEmail || '—') + ')' : '⏳ Available'} ${item.amazonUrl || item.url ? '| <a href="' + (item.amazonUrl || item.url) + '" target="_blank">Amazon</a>' : ''}</p>
           </div>
           <div class="admin-item__actions">
