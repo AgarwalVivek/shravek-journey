@@ -9,6 +9,8 @@
     "build": "echo No build needed"
   },
   "dependencies": {
-    "@azure/cosmos": "^4.2.0"
+    "@azure/cosmos": "^4.2.0",
+    "otplib": "^13.4.0",
+    "qrcode": "^1.5.4"
   }
 }

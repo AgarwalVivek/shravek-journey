@@ -1,5 +1,7 @@
 const { CosmosClient } = require("@azure/cosmos");
 const crypto = require("crypto");
+const { authenticator } = require("otplib");
+const QRCode = require("qrcode");
 
 let cosmosContainer;
 
@@ -99,6 +101,27 @@ module.exports = async function (context, req) {
 
       case "scrape-amazon":
         if (req.method === "POST") return await handleScrapeAmazon(context, req);
+        break;
+
+      case "settings":
+        if (req.method === "GET") return await handleGetSettings(context, req);
+        if (req.method === "PUT") return await handleUpdateSettings(context, req);
+        break;
+
+      case "change-password":
+        if (req.method === "PUT") return await handleChangePassword(context, req);
+        break;
+
+      case "setup-2fa":
+        if (req.method === "POST") return await handleSetup2FA(context, req);
+        break;
+
+      case "verify-2fa":
+        if (req.method === "POST") return await handleVerify2FA(context, req);
+        break;
+
+      case "2fa-status":
+        if (req.method === "GET") return await handleGet2FAStatus(context, req);
         break;
 
       case "all":
@@ -981,4 +1004,257 @@ function parseAmazonHtml(html, url) {
   }
 
   return product;
+}
+
+// --- Site Settings (hero photos, etc.) ---
+
+async function handleGetSettings(context, req) {
+  const container = getContainer();
+  try {
+    const { resource } = await container.item("site-settings", "settings").read();
+    context.res = {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ success: true, settings: resource || {} })
+    };
+  } catch (e) {
+    // No settings doc yet — return defaults
+    context.res = {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ success: true, settings: {} })
+    };
+  }
+}
+
+async function handleUpdateSettings(context, req) {
+  const updates = req.body || {};
+  const container = getContainer();
+
+  let settings;
+  try {
+    const { resource } = await container.item("site-settings", "settings").read();
+    settings = resource;
+  } catch (e) {
+    settings = { id: "site-settings", category: "settings" };
+  }
+
+  // Merge updates (only allowed fields)
+  const allowed = ["heroPhotoLeft", "heroPhotoRight", "heroPhotoLeftAlt", "heroPhotoRightAlt"];
+  allowed.forEach(key => {
+    if (updates[key] !== undefined) settings[key] = updates[key];
+  });
+  settings.updatedAt = new Date().toISOString();
+
+  try {
+    await container.item("site-settings", "settings").replace(settings);
+  } catch (e) {
+    await container.items.create(settings);
+  }
+
+  context.res = {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ success: true, settings })
+  };
+}
+
+async function handleChangePassword(context, req) {
+  const { currentPassword, newPassword, totpCode } = req.body || {};
+  if (!currentPassword || !newPassword) {
+    context.res = {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ success: false, error: "Current and new password are required." })
+    };
+    return;
+  }
+  if (newPassword.length < 6) {
+    context.res = {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ success: false, error: "New password must be at least 6 characters." })
+    };
+    return;
+  }
+
+  const container = getContainer();
+  const currentHash = crypto.createHash("sha256").update(currentPassword).digest("hex");
+
+  const { resources } = await container.items
+    .query({
+      query: "SELECT * FROM c WHERE c.category = 'admin' AND c.passwordHash = @hash",
+      parameters: [{ name: "@hash", value: currentHash }]
+    })
+    .fetchAll();
+
+  if (resources.length === 0) {
+    context.res = {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ success: false, error: "Current password is incorrect." })
+    };
+    return;
+  }
+
+  const user = resources[0];
+
+  // If 2FA is enabled, require TOTP code
+  if (user.totpEnabled && user.totpSecret) {
+    if (!totpCode) {
+      context.res = {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ success: false, error: "2FA code is required.", requires2FA: true })
+      };
+      return;
+    }
+    const isValid = authenticator.check(totpCode, user.totpSecret);
+    if (!isValid) {
+      context.res = {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ success: false, error: "Invalid 2FA code. Please try again." })
+      };
+      return;
+    }
+  }
+
+  user.passwordHash = crypto.createHash("sha256").update(newPassword).digest("hex");
+  user.activeTokens = [];
+  user.updatedAt = new Date().toISOString();
+
+  await container.item(user.id, "admin").replace(user);
+
+  context.res = {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ success: true, message: "Password updated. Please log in again." })
+  };
+}
+
+// --- 2FA Setup & Verification ---
+
+async function handleGet2FAStatus(context, req) {
+  const token = (req.query && req.query.token) || req.headers["x-admin-token"];
+  if (!token) {
+    context.res = { status: 401, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: "Not authenticated." }) };
+    return;
+  }
+  const container = getContainer();
+  const { resources } = await container.items
+    .query({ query: "SELECT * FROM c WHERE c.category = 'admin' AND ARRAY_CONTAINS(c.activeTokens, @token)", parameters: [{ name: "@token", value: token }] })
+    .fetchAll();
+  if (resources.length === 0) {
+    context.res = { status: 401, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: "Invalid session." }) };
+    return;
+  }
+  context.res = {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ success: true, enabled: !!resources[0].totpEnabled })
+  };
+}
+
+async function handleSetup2FA(context, req) {
+  const { token } = req.body || {};
+  if (!token) {
+    context.res = { status: 401, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: "Not authenticated." }) };
+    return;
+  }
+
+  const container = getContainer();
+  const { resources } = await container.items
+    .query({ query: "SELECT * FROM c WHERE c.category = 'admin' AND ARRAY_CONTAINS(c.activeTokens, @token)", parameters: [{ name: "@token", value: token }] })
+    .fetchAll();
+
+  if (resources.length === 0) {
+    context.res = { status: 401, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: "Invalid session." }) };
+    return;
+  }
+
+  const user = resources[0];
+  const secret = authenticator.generateSecret();
+  const siteName = process.env.SITE_NAME || "Journey Admin";
+  const otpauth = authenticator.keyuri(user.username || "admin", siteName, secret);
+
+  // Generate QR code as data URL
+  const qrDataUrl = await QRCode.toDataURL(otpauth);
+
+  // Store secret temporarily (not yet enabled — user must verify first)
+  user.totpPendingSecret = secret;
+  user.updatedAt = new Date().toISOString();
+  await container.item(user.id, "admin").replace(user);
+
+  context.res = {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ success: true, qrCode: qrDataUrl, secret, message: "Scan the QR code with Google Authenticator, then enter the 6-digit code to verify." })
+  };
+}
+
+async function handleVerify2FA(context, req) {
+  const { token, code, action } = req.body || {};
+  if (!token || !code) {
+    context.res = { status: 400, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: "Token and code are required." }) };
+    return;
+  }
+
+  const container = getContainer();
+  const { resources } = await container.items
+    .query({ query: "SELECT * FROM c WHERE c.category = 'admin' AND ARRAY_CONTAINS(c.activeTokens, @token)", parameters: [{ name: "@token", value: token }] })
+    .fetchAll();
+
+  if (resources.length === 0) {
+    context.res = { status: 401, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: "Invalid session." }) };
+    return;
+  }
+
+  const user = resources[0];
+
+  // Disable 2FA
+  if (action === "disable") {
+    if (!user.totpEnabled || !user.totpSecret) {
+      context.res = { status: 400, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: "2FA is not enabled." }) };
+      return;
+    }
+    const isValid = authenticator.check(code, user.totpSecret);
+    if (!isValid) {
+      context.res = { status: 403, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: "Invalid 2FA code." }) };
+      return;
+    }
+    user.totpEnabled = false;
+    user.totpSecret = null;
+    user.totpPendingSecret = null;
+    user.updatedAt = new Date().toISOString();
+    await container.item(user.id, "admin").replace(user);
+    context.res = { status: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: true, message: "2FA has been disabled." }) };
+    return;
+  }
+
+  // Enable 2FA — verify the pending secret
+  const pendingSecret = user.totpPendingSecret;
+  if (!pendingSecret) {
+    context.res = { status: 400, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: "No 2FA setup in progress. Start setup first." }) };
+    return;
+  }
+
+  const isValid = authenticator.check(code, pendingSecret);
+  if (!isValid) {
+    context.res = { status: 403, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: "Invalid code. Make sure you scanned the QR code and entered the current 6-digit code." }) };
+    return;
+  }
+
+  // Activate 2FA
+  user.totpSecret = pendingSecret;
+  user.totpEnabled = true;
+  user.totpPendingSecret = null;
+  user.updatedAt = new Date().toISOString();
+  await container.item(user.id, "admin").replace(user);
+
+  context.res = {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ success: true, message: "2FA is now enabled! You'll need the authenticator code for password changes." })
+  };
 }

@@ -12,6 +12,9 @@ document.getElementById('burger').addEventListener('click', () => {
 let journeyData = null;
 
 async function loadJourneyData() {
+  // Load hero photo settings
+  loadHeroPhotos();
+
   try {
     const res = await fetch('/api/journey/all');
     const result = await res.json();
@@ -37,6 +40,27 @@ async function loadJourneyData() {
   }
 
   renderAll();
+}
+
+async function loadHeroPhotos() {
+  try {
+    const res = await fetch('/api/journey/settings');
+    const data = await res.json();
+    if (data.success && data.settings) {
+      const s = data.settings;
+      if (s.heroPhotoLeft) {
+        const leftImg = document.querySelector('.hero__photo-left img');
+        if (leftImg) { leftImg.src = s.heroPhotoLeft; if (s.heroPhotoLeftAlt) leftImg.alt = s.heroPhotoLeftAlt; }
+      }
+      if (s.heroPhotoRight) {
+        const rightImg = document.querySelector('.hero__photo-right img');
+        if (rightImg) { rightImg.src = s.heroPhotoRight; if (s.heroPhotoRightAlt) rightImg.alt = s.heroPhotoRightAlt; }
+      }
+    }
+  } catch (e) {
+    // Keep default hardcoded URLs as fallback
+    console.log('Using default hero photos');
+  }
 }
 
 function renderAll() {

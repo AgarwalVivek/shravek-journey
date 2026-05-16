@@ -383,6 +383,269 @@
     window.location.href = 'login.html';
   };
 
+  // ─── Hero Photos ────────────────────────────────────────
+  async function loadSettings() {
+    try {
+      const res = await fetch(API + '/settings');
+      const data = await res.json();
+      if (data.success && data.settings) {
+        const s = data.settings;
+        if (s.heroPhotoLeft) {
+          document.getElementById('hero-photo-left').value = s.heroPhotoLeft;
+          document.getElementById('hero-left-preview').src = s.heroPhotoLeft;
+          document.getElementById('hero-left-preview').style.display = 'block';
+          document.getElementById('hero-left-placeholder').style.display = 'none';
+        }
+        if (s.heroPhotoRight) {
+          document.getElementById('hero-photo-right').value = s.heroPhotoRight;
+          document.getElementById('hero-right-preview').src = s.heroPhotoRight;
+          document.getElementById('hero-right-preview').style.display = 'block';
+          document.getElementById('hero-right-placeholder').style.display = 'none';
+        }
+        if (s.heroPhotoLeftAlt) document.getElementById('hero-photo-left-alt').value = s.heroPhotoLeftAlt;
+        if (s.heroPhotoRightAlt) document.getElementById('hero-photo-right-alt').value = s.heroPhotoRightAlt;
+      }
+    } catch (e) {
+      console.error('Error loading settings:', e);
+    }
+  }
+
+  // Live preview when URL changes
+  ['hero-photo-left', 'hero-photo-right'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', () => {
+        const side = id.includes('left') ? 'left' : 'right';
+        const preview = document.getElementById('hero-' + side + '-preview');
+        const placeholder = document.getElementById('hero-' + side + '-placeholder');
+        if (el.value.trim()) {
+          preview.src = el.value.trim();
+          preview.style.display = 'block';
+          placeholder.style.display = 'none';
+          preview.onerror = () => { preview.style.display = 'none'; placeholder.style.display = 'flex'; };
+        } else {
+          preview.style.display = 'none';
+          placeholder.style.display = 'flex';
+        }
+      });
+    }
+  });
+
+  window.saveHeroPhotos = async function (e) {
+    e.preventDefault();
+    const status = document.getElementById('hero-save-status');
+    status.textContent = '⏳ Saving...';
+    status.style.color = 'var(--muted)';
+
+    const body = {
+      heroPhotoLeft: document.getElementById('hero-photo-left').value.trim(),
+      heroPhotoRight: document.getElementById('hero-photo-right').value.trim(),
+      heroPhotoLeftAlt: document.getElementById('hero-photo-left-alt').value.trim(),
+      heroPhotoRightAlt: document.getElementById('hero-photo-right-alt').value.trim()
+    };
+
+    try {
+      const res = await fetch(API + '/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (data.success) {
+        status.textContent = '✅ Hero photos saved! Changes will appear on the homepage.';
+        status.style.color = '#2a7c4f';
+      } else {
+        status.textContent = '❌ ' + (data.error || 'Failed to save');
+        status.style.color = '#991b1b';
+      }
+    } catch (e) {
+      status.textContent = '❌ Network error';
+      status.style.color = '#991b1b';
+    }
+  };
+
+  // ─── Password Change ───────────────────────────────────
+  window.changePassword = async function (e) {
+    e.preventDefault();
+    const status = document.getElementById('password-save-status');
+    const newPw = document.getElementById('new-password').value;
+    const confirmPw = document.getElementById('confirm-password').value;
+
+    if (newPw !== confirmPw) {
+      status.textContent = '❌ Passwords do not match';
+      status.style.color = '#991b1b';
+      return;
+    }
+
+    status.textContent = '⏳ Updating...';
+    status.style.color = 'var(--muted)';
+
+    const body = {
+      currentPassword: document.getElementById('current-password').value,
+      newPassword: newPw,
+      totpCode: document.getElementById('totp-code').value.trim() || undefined
+    };
+
+    try {
+      const res = await fetch(API + '/change-password', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (data.success) {
+        status.textContent = '✅ ' + data.message;
+        status.style.color = '#2a7c4f';
+        setTimeout(() => { localStorage.clear(); window.location.href = 'login.html'; }, 2000);
+      } else if (data.requires2FA) {
+        // Show TOTP input field
+        document.getElementById('totp-code-group').style.display = 'block';
+        document.getElementById('totp-code').focus();
+        status.textContent = '🛡️ Enter your Google Authenticator code to proceed';
+        status.style.color = '#B45309';
+      } else {
+        status.textContent = '❌ ' + (data.error || 'Failed');
+        status.style.color = '#991b1b';
+      }
+    } catch (e) {
+      status.textContent = '❌ Network error';
+      status.style.color = '#991b1b';
+    }
+  };
+
+  // ─── 2FA Management ────────────────────────────────────
+  async function load2FAStatus() {
+    try {
+      const res = await fetch(API + '/2fa-status?token=' + token);
+      const data = await res.json();
+      const badge = document.getElementById('2fa-badge');
+      if (data.success && data.enabled) {
+        badge.textContent = '✅ 2FA Enabled';
+        badge.style.background = '#dcfce7';
+        badge.style.color = '#166534';
+        document.getElementById('2fa-setup-section').style.display = 'none';
+        document.getElementById('2fa-disable-section').style.display = 'block';
+        document.getElementById('totp-code-group').style.display = 'block';
+      } else {
+        badge.textContent = '⚠️ 2FA Not Enabled';
+        badge.style.background = '#fef3c7';
+        badge.style.color = '#92400e';
+        document.getElementById('2fa-setup-section').style.display = 'block';
+        document.getElementById('2fa-disable-section').style.display = 'none';
+        document.getElementById('totp-code-group').style.display = 'none';
+      }
+    } catch (e) {
+      console.error('Error checking 2FA status:', e);
+    }
+  }
+
+  window.start2FASetup = async function () {
+    const statusMsg = document.getElementById('2fa-status-msg');
+    statusMsg.textContent = '⏳ Generating QR code...';
+    statusMsg.style.color = 'var(--muted)';
+
+    try {
+      const res = await fetch(API + '/setup-2fa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
+      });
+      const data = await res.json();
+      if (data.success) {
+        document.getElementById('2fa-qr-image').src = data.qrCode;
+        document.getElementById('2fa-manual-key').textContent = data.secret;
+        document.getElementById('2fa-qr-section').style.display = 'block';
+        document.getElementById('2fa-setup-section').style.display = 'none';
+        statusMsg.textContent = '';
+      } else {
+        statusMsg.textContent = '❌ ' + (data.error || 'Failed');
+        statusMsg.style.color = '#991b1b';
+      }
+    } catch (e) {
+      statusMsg.textContent = '❌ Network error';
+      statusMsg.style.color = '#991b1b';
+    }
+  };
+
+  window.verify2FASetup = async function () {
+    const code = document.getElementById('2fa-verify-code').value.trim();
+    const statusMsg = document.getElementById('2fa-status-msg');
+
+    if (!code || code.length !== 6) {
+      statusMsg.textContent = '❌ Enter the 6-digit code from Google Authenticator';
+      statusMsg.style.color = '#991b1b';
+      return;
+    }
+
+    statusMsg.textContent = '⏳ Verifying...';
+    statusMsg.style.color = 'var(--muted)';
+
+    try {
+      const res = await fetch(API + '/verify-2fa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, code })
+      });
+      const data = await res.json();
+      if (data.success) {
+        statusMsg.textContent = '✅ ' + data.message;
+        statusMsg.style.color = '#2a7c4f';
+        document.getElementById('2fa-qr-section').style.display = 'none';
+        load2FAStatus();
+      } else {
+        statusMsg.textContent = '❌ ' + (data.error || 'Invalid code');
+        statusMsg.style.color = '#991b1b';
+      }
+    } catch (e) {
+      statusMsg.textContent = '❌ Network error';
+      statusMsg.style.color = '#991b1b';
+    }
+  };
+
+  window.cancel2FASetup = function () {
+    document.getElementById('2fa-qr-section').style.display = 'none';
+    document.getElementById('2fa-setup-section').style.display = 'block';
+    document.getElementById('2fa-status-msg').textContent = '';
+  };
+
+  window.disable2FA = async function () {
+    const code = document.getElementById('2fa-disable-code').value.trim();
+    const statusMsg = document.getElementById('2fa-status-msg');
+
+    if (!code || code.length !== 6) {
+      statusMsg.textContent = '❌ Enter the 6-digit code from Google Authenticator';
+      statusMsg.style.color = '#991b1b';
+      return;
+    }
+
+    if (!confirm('Are you sure you want to disable 2FA? Password changes will no longer require an authenticator code.')) return;
+
+    statusMsg.textContent = '⏳ Disabling...';
+    try {
+      const res = await fetch(API + '/verify-2fa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, code, action: 'disable' })
+      });
+      const data = await res.json();
+      if (data.success) {
+        statusMsg.textContent = '✅ ' + data.message;
+        statusMsg.style.color = '#2a7c4f';
+        load2FAStatus();
+      } else {
+        statusMsg.textContent = '❌ ' + (data.error || 'Failed');
+        statusMsg.style.color = '#991b1b';
+      }
+    } catch (e) {
+      statusMsg.textContent = '❌ Network error';
+      statusMsg.style.color = '#991b1b';
+    }
+  };
+
+  // Load settings and 2FA status on page load
+  loadSettings();
+  load2FAStatus();
+
   // ─── Status Message ──────────────────────────────────────
   function showStatus(msg) {
     const el = document.createElement('div');

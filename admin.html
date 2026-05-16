@@ -25,6 +25,7 @@
         <button class="sidebar__link" data-tab="baby">👶 Baby</button>
         <button class="sidebar__link" data-tab="photos">📷 Photos</button>
         <button class="sidebar__link" data-tab="events">🎉 Events</button>
+        <button class="sidebar__link" data-tab="settings">⚙️ Settings</button>
       </nav>
       <button onclick="adminLogout()" style="margin:0 1.5rem;padding:0.5rem;background:none;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.5);font-size:0.75rem;cursor:pointer;margin-bottom:0.5rem">Logout</button>
       <a href="index.html" class="sidebar__back">← Back to Website</a>
@@ -299,6 +300,134 @@
             <button type="submit" class="btn btn--dark" style="width:auto;padding:0.6rem 1.5rem;margin-top:0.75rem">+ Add to Registry</button>
           </form>
           <div id="list-registry"></div>
+        </div>
+      </section>
+
+      <!-- SETTINGS TAB -->
+      <section class="tab-pane" id="tab-settings">
+        <h1 class="admin-title">Site Settings</h1>
+
+        <!-- Hero Photos -->
+        <div class="admin-card" style="margin-bottom:2rem">
+          <h3 class="admin-card__title">🖼️ Homepage Hero Photos</h3>
+          <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem">
+            Set the two large photos that appear on the homepage hero section. 
+            Paste the full URL from your Azure Blob Storage or any image host.
+          </p>
+          <div id="hero-preview" style="display:flex;gap:1.5rem;margin-bottom:1.5rem;flex-wrap:wrap">
+            <div style="flex:1;min-width:200px;text-align:center">
+              <img id="hero-left-preview" src="" alt="Left photo" style="max-height:200px;border-radius:8px;border:2px dashed #ccc;display:none" />
+              <div id="hero-left-placeholder" style="height:200px;border:2px dashed #ccc;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:0.9rem">No photo set</div>
+              <p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem">Left Panel</p>
+            </div>
+            <div style="flex:1;min-width:200px;text-align:center">
+              <img id="hero-right-preview" src="" alt="Right photo" style="max-height:200px;border-radius:8px;border:2px dashed #ccc;display:none" />
+              <div id="hero-right-placeholder" style="height:200px;border:2px dashed #ccc;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:0.9rem">No photo set</div>
+              <p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem">Right Panel</p>
+            </div>
+          </div>
+          <form onsubmit="saveHeroPhotos(event)">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Left Photo URL</label>
+                <input type="url" id="hero-photo-left" placeholder="https://...blob.core.windows.net/photos/vivek.jpg" />
+              </div>
+              <div class="form-group">
+                <label>Left Photo Alt Text</label>
+                <input type="text" id="hero-photo-left-alt" placeholder="e.g. Vivek" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Right Photo URL</label>
+                <input type="url" id="hero-photo-right" placeholder="https://...blob.core.windows.net/photos/shraddha.jpg" />
+              </div>
+              <div class="form-group">
+                <label>Right Photo Alt Text</label>
+                <input type="text" id="hero-photo-right-alt" placeholder="e.g. Shraddha" />
+              </div>
+            </div>
+            <button type="submit" class="btn btn--dark" style="width:auto;padding:0.6rem 1.5rem">Save Hero Photos</button>
+          </form>
+          <p id="hero-save-status" style="font-size:0.8rem;margin-top:0.75rem"></p>
+        </div>
+
+        <!-- Change Password -->
+        <div class="admin-card" style="margin-bottom:2rem">
+          <h3 class="admin-card__title">🔑 Change Admin Password</h3>
+          <form onsubmit="changePassword(event)">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Current Password</label>
+                <input type="password" id="current-password" required />
+              </div>
+              <div class="form-group">
+                <label>New Password (min 6 chars)</label>
+                <input type="password" id="new-password" minlength="6" required />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Confirm New Password</label>
+                <input type="password" id="confirm-password" required />
+              </div>
+              <div class="form-group" id="totp-code-group" style="display:none">
+                <label>Google Authenticator Code</label>
+                <input type="text" id="totp-code" placeholder="6-digit code" maxlength="6" pattern="\d{6}" autocomplete="off" />
+              </div>
+            </div>
+            <button type="submit" class="btn btn--dark" style="width:auto;padding:0.6rem 1.5rem">Update Password</button>
+          </form>
+          <p id="password-save-status" style="font-size:0.8rem;margin-top:0.75rem"></p>
+        </div>
+
+        <!-- 2FA Setup -->
+        <div class="admin-card">
+          <h3 class="admin-card__title">🛡️ Two-Factor Authentication (2FA)</h3>
+          <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem">
+            Protect password changes with Google Authenticator. Even if someone knows your password, they can't change it without your phone.
+          </p>
+
+          <div id="2fa-status-display" style="margin-bottom:1rem">
+            <span id="2fa-badge" style="display:inline-block;padding:0.3rem 0.8rem;border-radius:20px;font-size:0.8rem;font-weight:500">Loading...</span>
+          </div>
+
+          <!-- Setup flow (shown when 2FA is OFF) -->
+          <div id="2fa-setup-section">
+            <button type="button" class="btn btn--dark" style="width:auto;padding:0.6rem 1.5rem" onclick="start2FASetup()">Enable 2FA</button>
+          </div>
+
+          <!-- QR Code display (shown during setup) -->
+          <div id="2fa-qr-section" style="display:none">
+            <div style="background:#f8f9fa;border:1px solid #e2e8f0;border-radius:8px;padding:1.5rem;text-align:center;margin-bottom:1rem">
+              <p style="font-size:0.9rem;font-weight:500;margin-bottom:1rem">1. Open Google Authenticator on your phone</p>
+              <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem">2. Tap + → Scan QR Code</p>
+              <img id="2fa-qr-image" src="" alt="QR Code" style="max-width:250px;margin:1rem auto;display:block;border-radius:4px" />
+              <p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem">Can't scan? Enter this code manually:</p>
+              <code id="2fa-manual-key" style="font-size:0.9rem;background:#e2e8f0;padding:0.3rem 0.8rem;border-radius:4px;letter-spacing:2px;word-break:break-all"></code>
+            </div>
+            <div style="display:flex;gap:0.5rem;align-items:flex-end;flex-wrap:wrap">
+              <div class="form-group" style="margin:0;flex:1;min-width:150px">
+                <label>3. Enter the 6-digit code from the app</label>
+                <input type="text" id="2fa-verify-code" placeholder="000000" maxlength="6" pattern="\d{6}" autocomplete="off" style="font-size:1.2rem;letter-spacing:4px;text-align:center" />
+              </div>
+              <button type="button" class="btn btn--dark" style="width:auto;padding:0.6rem 1.5rem;margin-bottom:0" onclick="verify2FASetup()">Verify & Enable</button>
+              <button type="button" class="btn btn--outline" style="padding:0.6rem 1rem;margin-bottom:0" onclick="cancel2FASetup()">Cancel</button>
+            </div>
+          </div>
+
+          <!-- Disable section (shown when 2FA is ON) -->
+          <div id="2fa-disable-section" style="display:none">
+            <div style="display:flex;gap:0.5rem;align-items:flex-end;flex-wrap:wrap">
+              <div class="form-group" style="margin:0;flex:1;min-width:150px">
+                <label>Enter authenticator code to disable</label>
+                <input type="text" id="2fa-disable-code" placeholder="6-digit code" maxlength="6" pattern="\d{6}" autocomplete="off" />
+              </div>
+              <button type="button" class="btn btn--dark" style="width:auto;padding:0.6rem 1.5rem;margin-bottom:0;background:#991b1b" onclick="disable2FA()">Disable 2FA</button>
+            </div>
+          </div>
+
+          <p id="2fa-status-msg" style="font-size:0.8rem;margin-top:0.75rem"></p>
         </div>
       </section>
 
