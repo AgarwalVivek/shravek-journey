@@ -231,7 +231,7 @@
         <div class="admin-item">
           <div class="admin-item__info">
             <h3>${item.name} — ₹${item.price || '?'}</h3>
-            <p>${item.claimed ? '✅ Claimed by ' + item.claimedBy : '⏳ Available'} ${item.url ? '| <a href="' + item.url + '" target="_blank">Amazon</a>' : ''}</p>
+            <p>${item.claimed || item.status === 'gone' ? '✅ Claimed by <strong>' + (item.claimedBy || '?') + '</strong> (' + (item.claimedEmail || '—') + ')' : '⏳ Available'} ${item.amazonUrl || item.url ? '| <a href="' + (item.amazonUrl || item.url) + '" target="_blank">Amazon</a>' : ''}</p>
           </div>
           <div class="admin-item__actions">
             <button class="btn-danger" onclick="deleteRegistryItem('${item.id}','${eventId}')">Delete</button>
