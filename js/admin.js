@@ -484,18 +484,21 @@
     }
   };
 
-  // Drag & drop support for hero photo panels
+  // Drag & drop support for hero photo panels (both placeholder and preview)
   ['left', 'right'].forEach(side => {
     const placeholder = document.getElementById('hero-' + side + '-placeholder');
-    if (!placeholder) return;
-    placeholder.addEventListener('dragover', (e) => { e.preventDefault(); placeholder.style.borderColor = 'var(--teal)'; placeholder.style.background = 'rgba(74,124,126,0.05)'; });
-    placeholder.addEventListener('dragleave', () => { placeholder.style.borderColor = '#ccc'; placeholder.style.background = ''; });
-    placeholder.addEventListener('drop', (e) => {
-      e.preventDefault();
-      placeholder.style.borderColor = '#ccc';
-      placeholder.style.background = '';
-      const file = e.dataTransfer.files[0];
-      if (file && file.type.startsWith('image/')) uploadHeroPhoto(side, file);
+    const preview = document.getElementById('hero-' + side + '-preview');
+    [placeholder, preview].forEach(el => {
+      if (!el) return;
+      el.addEventListener('dragover', (e) => { e.preventDefault(); el.style.borderColor = 'var(--teal)'; el.style.opacity = '0.7'; });
+      el.addEventListener('dragleave', () => { el.style.borderColor = '#ccc'; el.style.opacity = '1'; });
+      el.addEventListener('drop', (e) => {
+        e.preventDefault();
+        el.style.borderColor = '#ccc';
+        el.style.opacity = '1';
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) uploadHeroPhoto(side, file);
+      });
     });
   });
 
