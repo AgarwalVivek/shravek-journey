@@ -24,7 +24,9 @@
         <button class="sidebar__link" data-tab="travel">✈️ Travel</button>
         <button class="sidebar__link" data-tab="baby">👶 Baby</button>
         <button class="sidebar__link" data-tab="photos">📷 Photos</button>
+        <button class="sidebar__link" data-tab="events">🎉 Events</button>
       </nav>
+      <button onclick="adminLogout()" style="margin:0 1.5rem;padding:0.5rem;background:none;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.5);font-size:0.75rem;cursor:pointer;margin-bottom:0.5rem">Logout</button>
       <a href="index.html" class="sidebar__back">← Back to Website</a>
     </aside>
 
@@ -207,6 +209,86 @@
         </div>
         <p class="admin-hint">Upload photos to <a href="https://portal.azure.com" target="_blank">Azure Portal</a> → Storage Account → <code>shravekjourneyphotos</code> → <code>photos</code> container, then paste the URL here.</p>
         <div id="list-photos" class="photo-admin-grid"></div>
+      </section>
+
+      <!-- EVENTS TAB -->
+      <section class="tab-pane" id="tab-events">
+        <h1 class="admin-title">Events</h1>
+        <div class="admin-toolbar">
+          <button class="btn btn--dark" style="width:auto;padding:0.6rem 1.5rem" onclick="showEventForm()">+ Create Event</button>
+        </div>
+        <div id="form-events" class="admin-card" style="display:none">
+          <h3 class="admin-card__title">New Event</h3>
+          <form onsubmit="saveEvent(event)">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Event Title</label>
+                <input type="text" id="event-title-input" placeholder="e.g. Baby Shower" required />
+              </div>
+              <div class="form-group">
+                <label>Date</label>
+                <input type="text" id="event-date-input" placeholder="e.g. June 15, 2026" required />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Type</label>
+                <select id="event-type-input">
+                  <option value="baby-shower">Baby Shower</option>
+                  <option value="birthday">Birthday</option>
+                  <option value="anniversary">Anniversary</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>&nbsp;</label>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Description</label>
+              <textarea id="event-desc-input" rows="2" placeholder="Event details..."></textarea>
+            </div>
+            <div style="display:flex;gap:1rem;margin-top:1rem">
+              <button type="submit" class="btn btn--dark" style="width:auto;padding:0.6rem 1.5rem">Create</button>
+              <button type="button" class="btn btn--outline" style="padding:0.6rem 1.5rem" onclick="hideEventForm()">Cancel</button>
+            </div>
+          </form>
+        </div>
+        <div id="list-events"></div>
+
+        <!-- Registry Management (shows when you click "Registry" on an event) -->
+        <div id="registry-mgmt" class="admin-card" style="display:none;margin-top:2rem">
+          <h3 class="admin-card__title">Registry — <span id="registry-event-title"></span></h3>
+          <input type="hidden" id="registry-event-id" />
+          <form onsubmit="saveRegistryItem(event)" style="margin-bottom:1.5rem">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Product Name</label>
+                <input type="text" id="reg-item-name" placeholder="e.g. Baby Crib" required />
+              </div>
+              <div class="form-group">
+                <label>Price (₹)</label>
+                <input type="text" id="reg-item-price" placeholder="e.g. 2999" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Amazon URL</label>
+                <input type="url" id="reg-item-url" placeholder="https://amazon.in/..." />
+              </div>
+              <div class="form-group">
+                <label>Image URL</label>
+                <input type="url" id="reg-item-image" placeholder="https://..." />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Order</label>
+              <input type="number" id="reg-item-order" placeholder="1" style="max-width:100px" />
+            </div>
+            <button type="submit" class="btn btn--dark" style="width:auto;padding:0.6rem 1.5rem;margin-top:0.75rem">+ Add to Registry</button>
+          </form>
+          <div id="list-registry"></div>
+        </div>
       </section>
 
     </main>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Login — Shravek Journey</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    body { background: #F0EDE8; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .login-card {
+      background: var(--white); border: 1px solid var(--border);
+      padding: 3rem; max-width: 380px; width: 100%; text-align: center;
+    }
+    .login-card h1 {
+      font-family: var(--ff-serif); font-size: 1.8rem; font-weight: 300;
+      margin-bottom: 0.5rem; color: var(--dark);
+    }
+    .login-card p {
+      font-size: 0.82rem; color: var(--muted); margin-bottom: 2rem;
+    }
+    .login-card .form-group {
+      display: flex; flex-direction: column; gap: 0.3rem;
+      text-align: left; margin-bottom: 1rem;
+    }
+    .login-card label {
+      font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
+    }
+    .login-card input {
+      font-family: var(--ff-sans); font-size: 0.9rem;
+      padding: 0.7rem 0.85rem; border: 1px solid var(--border);
+      background: var(--ivory); width: 100%;
+    }
+    .login-card .btn { margin-top: 1rem; width: 100%; }
+    .login-error {
+      background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;
+      padding: 0.6rem; font-size: 0.82rem; margin-top: 1rem; display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <h1>Shravek</h1>
+    <p>Admin Panel Login</p>
+    <form id="login-form">
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="username" required autocomplete="username" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="password" required autocomplete="current-password" />
+      </div>
+      <button type="submit" class="btn btn--dark">Sign In</button>
+      <div class="login-error" id="error-msg"></div>
+    </form>
+  </div>
+
+  <script>
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errEl = document.getElementById('error-msg');
+      errEl.style.display = 'none';
+
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+
+      try {
+        const res = await fetch('/api/journey/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (data.success) {
+          localStorage.setItem('adminToken', data.token);
+          localStorage.setItem('adminUser', data.username);
+          window.location.href = 'admin.html';
+        } else {
+          errEl.textContent = data.error || 'Invalid credentials';
+          errEl.style.display = 'block';
+        }
+      } catch (err) {
+        errEl.textContent = 'Connection error. Please try again.';
+        errEl.style.display = 'block';
+      }
+    });
+
+    // If already logged in, redirect
+    if (localStorage.getItem('adminToken')) {
+      fetch('/api/journey/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: localStorage.getItem('adminToken') })
+      }).then(r => r.json()).then(d => {
+        if (d.success) window.location.href = 'admin.html';
+      });
+    }
+  </script>
+</body>
+</html>
