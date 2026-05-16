@@ -65,6 +65,12 @@ module.exports = async function (context, req) {
       case "rsvp":
         if (req.method === "GET") return await handleGetRsvps(context, req);
         if (req.method === "POST") return await handleCreateRsvp(context, req);
+        if (req.method === "PUT") return await handleUpdateRsvp(context, req);
+        if (req.method === "DELETE") return await handleCancelRsvp(context, req);
+        break;
+
+      case "rsvp-lookup":
+        if (req.method === "GET") return await handleRsvpLookup(context, req);
         break;
 
       case "registry":
@@ -72,6 +78,14 @@ module.exports = async function (context, req) {
         if (req.method === "POST") return await handleCreateRegistryItem(context, req);
         if (req.method === "PUT") return await handleClaimRegistryItem(context, req);
         if (req.method === "DELETE") return await handleDeleteRegistryItem(context, req);
+        break;
+
+      case "registry-unclaim":
+        if (req.method === "PUT") return await handleUnclaimRegistryItem(context, req);
+        break;
+
+      case "my-claims":
+        if (req.method === "GET") return await handleMyClaims(context, req);
         break;
 
       case "analyze-photo":
@@ -445,6 +459,36 @@ async function handleGetRsvps(context, req) {
 
 async function handleCreateRsvp(context, req) {
   const body = req.body || {};
+  const container = getContainer();
+
+  // Check if email already has an RSVP for this event (upsert behavior)
+  if (body.email && body.eventId) {
+    const { resources } = await container.items
+      .query({
+        query: "SELECT * FROM c WHERE c.category = 'rsvp' AND c.email = @email AND c.eventId = @eventId",
+        parameters: [
+          { name: "@email", value: body.email },
+          { name: "@eventId", value: body.eventId }
+        ]
+      }).fetchAll();
+    
+    if (resources.length > 0) {
+      // Update existing RSVP
+      const existing = resources[0];
+      existing.name = body.name || existing.name;
+      existing.guests = body.guests || existing.guests;
+      existing.message = body.message !== undefined ? body.message : existing.message;
+      existing.updatedAt = new Date().toISOString();
+      await container.item(existing.id, "rsvp").replace(existing);
+      context.res = {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ success: true, rsvp: existing, updated: true })
+      };
+      return;
+    }
+  }
+
   const rsvp = {
     id: "rsvp_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
     category: "rsvp",
@@ -456,7 +500,6 @@ async function handleCreateRsvp(context, req) {
     createdAt: new Date().toISOString()
   };
 
-  const container = getContainer();
   await container.items.create(rsvp);
 
   context.res = {
@@ -464,6 +507,52 @@ async function handleCreateRsvp(context, req) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ success: true, rsvp })
   };
+}
+
+async function handleUpdateRsvp(context, req) {
+  const body = req.body || {};
+  if (!body.id) {
+    context.res = { status: 400, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: "RSVP ID required." }) };
+    return;
+  }
+  const container = getContainer();
+  const { resource: doc } = await container.item(body.id, "rsvp").read();
+  if (!doc) {
+    context.res = { status: 404, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: "RSVP not found." }) };
+    return;
+  }
+  doc.name = body.name || doc.name;
+  doc.guests = body.guests || doc.guests;
+  doc.message = body.message !== undefined ? body.message : doc.message;
+  doc.updatedAt = new Date().toISOString();
+  await container.item(doc.id, "rsvp").replace(doc);
+  context.res = { status: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: true, rsvp: doc }) };
+}
+
+async function handleCancelRsvp(context, req) {
+  const id = req.query && req.query.id;
+  if (!id) {
+    context.res = { status: 400, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: "RSVP ID required." }) };
+    return;
+  }
+  const container = getContainer();
+  await container.item(id, "rsvp").delete();
+  context.res = { status: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: true, message: "RSVP cancelled." }) };
+}
+
+async function handleRsvpLookup(context, req) {
+  const email = req.query && req.query.email;
+  if (!email) {
+    context.res = { status: 400, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: "Email required." }) };
+    return;
+  }
+  const container = getContainer();
+  const { resources } = await container.items
+    .query({
+      query: "SELECT * FROM c WHERE c.category = 'rsvp' AND c.email = @email",
+      parameters: [{ name: "@email", value: email }]
+    }).fetchAll();
+  context.res = { status: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: true, rsvps: resources }) };
 }
 
 // --- Registry ---
@@ -503,9 +592,11 @@ async function handleCreateRegistryItem(context, req) {
     name: body.name,
     price: body.price,
     url: body.url,
-    imageUrl: body.imageUrl,
-    claimedBy: body.claimedBy || null,
-    claimedEmail: body.claimedEmail || null,
+    image: body.image || body.imageUrl,
+    amazonUrl: body.amazonUrl || body.url,
+    status: "available",
+    claimedBy: null,
+    claimedEmail: null,
     claimed: false,
     order: body.order || 0,
     createdAt: new Date().toISOString()
@@ -544,9 +635,11 @@ async function handleClaimRegistryItem(context, req) {
     return;
   }
 
+  doc.status = "gone";
   doc.claimed = true;
   doc.claimedBy = claimedBy;
   doc.claimedEmail = claimedEmail;
+  doc.claimedAt = new Date().toISOString();
 
   await container.item(id, "registry").replace(doc);
 
@@ -576,6 +669,46 @@ async function handleDeleteRegistryItem(context, req) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ success: true, message: "Registry item deleted." })
   };
+}
+
+async function handleUnclaimRegistryItem(context, req) {
+  const { id, email } = req.body || {};
+  if (!id || !email) {
+    context.res = { status: 400, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: "Item ID and email required." }) };
+    return;
+  }
+  const container = getContainer();
+  const { resource: doc } = await container.item(id, "registry").read();
+  if (!doc) {
+    context.res = { status: 404, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: "Item not found." }) };
+    return;
+  }
+  if (doc.claimedEmail !== email) {
+    context.res = { status: 403, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: "This item was not claimed by you." }) };
+    return;
+  }
+  doc.status = "available";
+  doc.claimed = false;
+  doc.claimedBy = null;
+  doc.claimedEmail = null;
+  doc.claimedAt = null;
+  await container.item(id, "registry").replace(doc);
+  context.res = { status: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: true, item: doc }) };
+}
+
+async function handleMyClaims(context, req) {
+  const email = req.query && req.query.email;
+  if (!email) {
+    context.res = { status: 400, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: "Email required." }) };
+    return;
+  }
+  const container = getContainer();
+  const { resources } = await container.items
+    .query({
+      query: "SELECT * FROM c WHERE c.category = 'registry' AND c.claimedEmail = @email",
+      parameters: [{ name: "@email", value: email }]
+    }).fetchAll();
+  context.res = { status: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: true, items: resources }) };
 }
 
 // --- AI Photo Analysis ---

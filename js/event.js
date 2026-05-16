@@ -1,7 +1,7 @@
 // Event page logic (RSVP + Registry)
 (function () {
   const params = new URLSearchParams(window.location.search);
-  const eventId = params.get('id') || 'baby-shower';
+  const eventId = params.get('id') || '';
 
   // Tab switching
   document.querySelectorAll('.event-tab').forEach(tab => {
@@ -22,14 +22,12 @@
       const res = await fetch('/api/journey/events');
       const data = await res.json();
       if (data.success && data.events && data.events.length > 0) {
-        // Find by ID or fall back to first event
         const event = eventId ? data.events.find(e => e.id === eventId) : data.events[0];
-        if (!event && data.events.length > 0) var evt = data.events[0]; else var evt = event;
+        const evt = event || data.events[0];
         if (evt) {
-          // Store the resolved event ID for registry loading
           window._eventId = evt.id;
           document.getElementById('event-title').textContent = evt.name || evt.title || 'Baby Shower';
-          document.getElementById('event-date').textContent = evt.date || '';
+          document.getElementById('event-date').textContent = evt.date ? new Date(evt.date + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
           document.getElementById('event-description').textContent = evt.description || '';
           document.title = (evt.name || evt.title || 'Event') + ' — Shravek Journey';
         }
@@ -39,9 +37,9 @@
     }
   }
 
+  // ─── Registry ───────────────────────────────────────────
   async function loadRegistry() {
     const grid = document.getElementById('registry-grid');
-    // Wait for event to resolve its ID
     await new Promise(r => setTimeout(r, 500));
     const resolvedId = window._eventId || eventId;
     try {
@@ -52,21 +50,23 @@
           grid.innerHTML = '<p class="loading">No gifts in the registry yet.</p>';
           return;
         }
-        grid.innerHTML = data.items.map(item => `
-          <div class="registry-card ${item.status === 'gone' ? 'claimed' : ''}">
-            ${item.image ? `<img class="registry-card__img" src="${item.image}" alt="${item.name}" />` : ''}
+        grid.innerHTML = data.items.map(item => {
+          const isGone = item.status === 'gone' || item.claimed;
+          return `
+          <div class="registry-card ${isGone ? 'claimed' : ''}">
+            ${item.image ? `<img class="registry-card__img" src="${item.image}" alt="${item.name}" onerror="this.style.display='none'" />` : ''}
             <div class="registry-card__body">
               <div class="registry-card__name">${item.name}</div>
-              <div class="registry-card__price">${item.price || '—'}</div>
-              ${item.status === 'gone'
-                ? `<button class="registry-card__btn gone" disabled>Gone! 🎉</button>
-                   <div class="registry-card__claimed">Claimed by ${item.bookedBy || 'someone'}</div>`
+              <div class="registry-card__price">${item.price || ''}</div>
+              ${isGone
+                ? `<div class="registry-card__gone-badge">GONE 🎉</div>
+                   <div class="registry-card__claimed">Claimed by ${item.claimedBy || 'someone'}</div>`
                 : `<button class="registry-card__btn" onclick="openClaimModal('${item.id}', '${item.name.replace(/'/g, "\\'")}')">I'll Get This!</button>`
               }
-              ${item.amazonUrl ? `<a href="${item.amazonUrl}" target="_blank" style="display:block;text-align:center;font-size:0.75rem;margin-top:0.5rem;color:var(--rose)">View on Amazon →</a>` : ''}
+              ${item.amazonUrl || item.url ? `<a href="${item.amazonUrl || item.url}" target="_blank" class="registry-card__amazon">View on Amazon →</a>` : ''}
             </div>
-          </div>
-        `).join('');
+          </div>`;
+        }).join('');
       } else {
         grid.innerHTML = '<p class="loading">Could not load registry.</p>';
       }
@@ -75,27 +75,74 @@
     }
   }
 
-  // RSVP form
-  document.getElementById('rsvp-form').addEventListener('submit', async (e) => {
+  // ─── RSVP ──────────────────────────────────────────────
+  const rsvpForm = document.getElementById('rsvp-form');
+
+  // Lookup existing RSVP by email
+  window.lookupRsvp = async function () {
+    const email = document.getElementById('rsvp-lookup-email').value.trim();
+    const status = document.getElementById('rsvp-lookup-status');
+    if (!email) { status.textContent = 'Please enter your email.'; status.style.color = '#991b1b'; return; }
+
+    status.textContent = 'Looking up...';
+    status.style.color = 'var(--muted)';
+
+    try {
+      const res = await fetch('/api/journey/rsvp-lookup?email=' + encodeURIComponent(email));
+      const data = await res.json();
+      if (data.success && data.rsvps && data.rsvps.length > 0) {
+        const rsvp = data.rsvps[0];
+        // Fill form with existing data
+        document.getElementById('rsvp-id').value = rsvp.id;
+        document.getElementById('rsvp-name').value = rsvp.name || '';
+        document.getElementById('rsvp-email').value = rsvp.email || '';
+        document.getElementById('rsvp-guests').value = rsvp.guests || 1;
+        document.getElementById('rsvp-message').value = rsvp.message || '';
+        document.getElementById('rsvp-submit-btn').textContent = 'Update RSVP';
+        document.getElementById('rsvp-cancel-btn').style.display = 'inline-block';
+        status.textContent = '✅ Found your RSVP! Edit below and click Update.';
+        status.style.color = '#2a7c4f';
+      } else {
+        status.textContent = 'No existing RSVP found. Fill out the form below to RSVP!';
+        status.style.color = 'var(--muted)';
+        document.getElementById('rsvp-email').value = email;
+      }
+    } catch (e) {
+      status.textContent = '⚠️ Could not look up. Try submitting a new RSVP.';
+      status.style.color = '#B45309';
+    }
+  };
+
+  // Submit / Update RSVP
+  rsvpForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    const resolvedId = window._eventId || eventId;
     const body = {
-      eventId,
+      eventId: resolvedId,
       name: document.getElementById('rsvp-name').value.trim(),
       email: document.getElementById('rsvp-email').value.trim(),
       guests: parseInt(document.getElementById('rsvp-guests').value) || 1,
       message: document.getElementById('rsvp-message').value.trim()
     };
 
+    const existingId = document.getElementById('rsvp-id').value;
+    if (existingId) body.id = existingId;
+
     try {
       const res = await fetch('/api/journey/rsvp', {
-        method: 'POST',
+        method: existingId ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
       const data = await res.json();
       if (data.success) {
-        document.getElementById('rsvp-form').style.display = 'none';
-        document.getElementById('rsvp-success').style.display = 'block';
+        rsvpForm.style.display = 'none';
+        document.getElementById('rsvp-lookup').style.display = 'none';
+        const successEl = document.getElementById('rsvp-success');
+        successEl.style.display = 'block';
+        document.getElementById('rsvp-success-msg').textContent = data.updated
+          ? 'Your RSVP has been updated! See you there! 🎉'
+          : 'Your RSVP has been received. We can\'t wait to see you!';
       } else {
         alert('Error: ' + (data.error || 'Could not submit RSVP'));
       }
@@ -104,7 +151,28 @@
     }
   });
 
-  // Claim modal
+  // Cancel RSVP
+  window.cancelRsvp = async function () {
+    const id = document.getElementById('rsvp-id').value;
+    if (!id) return;
+    if (!confirm('Are you sure you want to cancel your RSVP?')) return;
+
+    try {
+      const res = await fetch('/api/journey/rsvp?id=' + id, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        rsvpForm.style.display = 'none';
+        document.getElementById('rsvp-lookup').style.display = 'none';
+        const successEl = document.getElementById('rsvp-success');
+        successEl.style.display = 'block';
+        document.getElementById('rsvp-success-msg').textContent = 'Your RSVP has been cancelled. We hope to see you next time! 💛';
+      }
+    } catch (e) {
+      alert('Error cancelling RSVP.');
+    }
+  };
+
+  // ─── Claim Modal ────────────────────────────────────────
   window.openClaimModal = function (id, name) {
     document.getElementById('claim-item-id').value = id;
     document.getElementById('claim-item-name').textContent = name;
@@ -130,12 +198,17 @@
       const data = await res.json();
       if (data.success) {
         closeClaimModal();
-        loadRegistry(); // Refresh
+        loadRegistry();
       } else {
         alert('Error: ' + (data.error || 'Could not claim gift'));
       }
     } catch (err) {
       alert('Connection error. Please try again.');
     }
+  });
+
+  // Close modal on overlay click
+  document.getElementById('claim-modal').addEventListener('click', (e) => {
+    if (e.target.id === 'claim-modal') closeClaimModal();
   });
 })();

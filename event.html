@@ -32,7 +32,18 @@
       <h2 class="section-title">RSVP</h2>
       <p class="section-subtitle">Let us know if you can make it! 💕</p>
 
+      <!-- Email lookup -->
+      <div id="rsvp-lookup" style="margin-bottom:2rem;padding:1.25rem 1.5rem;background:#fff;border:1px solid var(--border);border-radius:6px">
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.75rem">Already RSVP'd? Enter your email to update or cancel.</p>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+          <input type="email" id="rsvp-lookup-email" placeholder="Enter your email..." style="flex:1;min-width:200px;padding:0.5rem 0.75rem;border:1px solid #ccc;border-radius:4px" />
+          <button type="button" class="btn btn--outline" onclick="lookupRsvp()" style="padding:0.5rem 1rem">Look Up</button>
+        </div>
+        <p id="rsvp-lookup-status" style="font-size:0.8rem;margin-top:0.5rem"></p>
+      </div>
+
       <form class="rsvp-form" id="rsvp-form">
+        <input type="hidden" id="rsvp-id" />
         <div class="form-row">
           <div class="form-group">
             <label>Your Name</label>
@@ -53,13 +64,16 @@
             <input type="text" id="rsvp-message" placeholder="Congratulations!" />
           </div>
         </div>
-        <button type="submit" class="btn btn--dark">Submit RSVP</button>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center">
+          <button type="submit" class="btn btn--dark" id="rsvp-submit-btn">Submit RSVP</button>
+          <button type="button" class="btn btn--outline" id="rsvp-cancel-btn" style="display:none;color:#991b1b;border-color:#991b1b" onclick="cancelRsvp()">Cancel My RSVP</button>
+        </div>
       </form>
 
       <div class="rsvp-success" id="rsvp-success" style="display:none">
         <span>🎉</span>
         <h3>Thank you!</h3>
-        <p>Your RSVP has been received. We can't wait to see you!</p>
+        <p id="rsvp-success-msg">Your RSVP has been received. We can't wait to see you!</p>
       </div>
     </div>
   </section>
