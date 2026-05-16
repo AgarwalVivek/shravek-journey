@@ -21,13 +21,17 @@
     try {
       const res = await fetch('/api/journey/events');
       const data = await res.json();
-      if (data.success && data.events) {
-        const event = data.events.find(e => e.id === eventId);
-        if (event) {
-          document.getElementById('event-title').textContent = event.title || 'Baby Shower';
-          document.getElementById('event-date').textContent = event.date || '';
-          document.getElementById('event-description').textContent = event.description || '';
-          document.title = (event.title || 'Event') + ' — Shravek Journey';
+      if (data.success && data.events && data.events.length > 0) {
+        // Find by ID or fall back to first event
+        const event = eventId ? data.events.find(e => e.id === eventId) : data.events[0];
+        if (!event && data.events.length > 0) var evt = data.events[0]; else var evt = event;
+        if (evt) {
+          // Store the resolved event ID for registry loading
+          window._eventId = evt.id;
+          document.getElementById('event-title').textContent = evt.name || evt.title || 'Baby Shower';
+          document.getElementById('event-date').textContent = evt.date || '';
+          document.getElementById('event-description').textContent = evt.description || '';
+          document.title = (evt.name || evt.title || 'Event') + ' — Shravek Journey';
         }
       }
     } catch (e) {
@@ -37,8 +41,11 @@
 
   async function loadRegistry() {
     const grid = document.getElementById('registry-grid');
+    // Wait for event to resolve its ID
+    await new Promise(r => setTimeout(r, 500));
+    const resolvedId = window._eventId || eventId;
     try {
-      const res = await fetch('/api/journey/registry?eventId=' + eventId);
+      const res = await fetch('/api/journey/registry?eventId=' + resolvedId);
       const data = await res.json();
       if (data.success && data.items) {
         if (data.items.length === 0) {
@@ -46,17 +53,17 @@
           return;
         }
         grid.innerHTML = data.items.map(item => `
-          <div class="registry-card ${item.claimed ? 'claimed' : ''}">
-            ${item.imageUrl ? `<img class="registry-card__img" src="${item.imageUrl}" alt="${item.name}" />` : ''}
+          <div class="registry-card ${item.status === 'gone' ? 'claimed' : ''}">
+            ${item.image ? `<img class="registry-card__img" src="${item.image}" alt="${item.name}" />` : ''}
             <div class="registry-card__body">
               <div class="registry-card__name">${item.name}</div>
-              <div class="registry-card__price">₹${item.price || '—'}</div>
-              ${item.claimed
+              <div class="registry-card__price">${item.price || '—'}</div>
+              ${item.status === 'gone'
                 ? `<button class="registry-card__btn gone" disabled>Gone! 🎉</button>
-                   <div class="registry-card__claimed">Claimed by ${item.claimedBy}</div>`
+                   <div class="registry-card__claimed">Claimed by ${item.bookedBy || 'someone'}</div>`
                 : `<button class="registry-card__btn" onclick="openClaimModal('${item.id}', '${item.name.replace(/'/g, "\\'")}')">I'll Get This!</button>`
               }
-              ${item.url ? `<a href="${item.url}" target="_blank" style="display:block;text-align:center;font-size:0.75rem;margin-top:0.5rem;color:var(--rose)">View on Amazon →</a>` : ''}
+              ${item.amazonUrl ? `<a href="${item.amazonUrl}" target="_blank" style="display:block;text-align:center;font-size:0.75rem;margin-top:0.5rem;color:var(--rose)">View on Amazon →</a>` : ''}
             </div>
           </div>
         `).join('');
