@@ -1034,6 +1034,7 @@ async function handleUpdateSettings(context, req) {
   let settings;
   try {
     const { resource } = await container.item("site-settings", "settings").read();
+    if (!resource) throw new Error("not found");
     settings = resource;
   } catch (e) {
     settings = { id: "site-settings", category: "settings" };
