@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Shravek Journey</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/admin.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+</head>
+<body class="admin-body">
+
+  <div class="admin-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar__logo">
+        <span class="sidebar__logo-top">Shravek</span>
+        <span class="sidebar__logo-sub">Admin Panel</span>
+      </div>
+      <nav class="sidebar__nav">
+        <button class="sidebar__link active" data-tab="timeline">📅 Timeline</button>
+        <button class="sidebar__link" data-tab="travel">✈️ Travel</button>
+        <button class="sidebar__link" data-tab="baby">👶 Baby</button>
+        <button class="sidebar__link" data-tab="photos">📷 Photos</button>
+      </nav>
+      <a href="index.html" class="sidebar__back">← Back to Website</a>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="admin-main">
+
+      <!-- TIMELINE TAB -->
+      <section class="tab-pane active" id="tab-timeline">
+        <h1 class="admin-title">Timeline Milestones</h1>
+        <div class="admin-toolbar">
+          <button class="btn btn--dark" style="width:auto;padding:0.6rem 1.5rem" onclick="showForm('timeline')">+ Add Milestone</button>
+        </div>
+        <div id="form-timeline" class="admin-card" style="display:none">
+          <h3 class="admin-card__title">Add/Edit Milestone</h3>
+          <form onsubmit="saveItem(event,'timeline')">
+            <input type="hidden" id="timeline-edit-id" />
+            <div class="form-row">
+              <div class="form-group">
+                <label>Title</label>
+                <input type="text" id="timeline-title" placeholder="e.g. Said Yes!" required />
+              </div>
+              <div class="form-group">
+                <label>Date</label>
+                <input type="text" id="timeline-date" placeholder="e.g. 2022" required />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Icon (emoji)</label>
+                <input type="text" id="timeline-icon" placeholder="e.g. 💍" />
+              </div>
+              <div class="form-group">
+                <label>Order</label>
+                <input type="number" id="timeline-order" placeholder="1" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Description</label>
+              <textarea id="timeline-description" rows="2" placeholder="What happened..."></textarea>
+            </div>
+            <div class="form-group">
+              <label>Photo URL (optional, from Blob Storage)</label>
+              <input type="url" id="timeline-photoUrl" placeholder="https://shravekjourneyphotos.blob.core.windows.net/photos/..." />
+            </div>
+            <div style="display:flex;gap:1rem;margin-top:1rem">
+              <button type="submit" class="btn btn--dark" style="width:auto;padding:0.6rem 1.5rem">Save</button>
+              <button type="button" class="btn btn--outline" style="padding:0.6rem 1.5rem" onclick="hideForm('timeline')">Cancel</button>
+            </div>
+          </form>
+        </div>
+        <div id="list-timeline"></div>
+      </section>
+
+      <!-- TRAVEL TAB -->
+      <section class="tab-pane" id="tab-travel">
+        <h1 class="admin-title">Travel Adventures</h1>
+        <div class="admin-toolbar">
+          <button class="btn btn--dark" style="width:auto;padding:0.6rem 1.5rem" onclick="showForm('travel')">+ Add Trip</button>
+        </div>
+        <div id="form-travel" class="admin-card" style="display:none">
+          <h3 class="admin-card__title">Add/Edit Trip</h3>
+          <form onsubmit="saveItem(event,'travel')">
+            <input type="hidden" id="travel-edit-id" />
+            <div class="form-row">
+              <div class="form-group">
+                <label>Destination</label>
+                <input type="text" id="travel-destination" placeholder="e.g. Manali" required />
+              </div>
+              <div class="form-group">
+                <label>Date</label>
+                <input type="text" id="travel-date" placeholder="e.g. Dec 2021" required />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Icon (emoji)</label>
+                <input type="text" id="travel-icon" placeholder="e.g. 🏔️" />
+              </div>
+              <div class="form-group">
+                <label>Order</label>
+                <input type="number" id="travel-order" placeholder="1" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Description</label>
+              <textarea id="travel-description" rows="2" placeholder="Trip highlights..."></textarea>
+            </div>
+            <div class="form-group">
+              <label>Photo URL (optional)</label>
+              <input type="url" id="travel-photoUrl" placeholder="https://shravekjourneyphotos.blob.core.windows.net/photos/..." />
+            </div>
+            <div style="display:flex;gap:1rem;margin-top:1rem">
+              <button type="submit" class="btn btn--dark" style="width:auto;padding:0.6rem 1.5rem">Save</button>
+              <button type="button" class="btn btn--outline" style="padding:0.6rem 1.5rem" onclick="hideForm('travel')">Cancel</button>
+            </div>
+          </form>
+        </div>
+        <div id="list-travel"></div>
+      </section>
+
+      <!-- BABY TAB -->
+      <section class="tab-pane" id="tab-baby">
+        <h1 class="admin-title">Baby Journey</h1>
+        <div class="admin-toolbar">
+          <button class="btn btn--dark" style="width:auto;padding:0.6rem 1.5rem" onclick="showForm('baby')">+ Add Milestone</button>
+        </div>
+        <div id="form-baby" class="admin-card" style="display:none">
+          <h3 class="admin-card__title">Add/Edit Baby Milestone</h3>
+          <form onsubmit="saveItem(event,'baby')">
+            <input type="hidden" id="baby-edit-id" />
+            <div class="form-row">
+              <div class="form-group">
+                <label>Title</label>
+                <input type="text" id="baby-title" placeholder="e.g. First Steps" required />
+              </div>
+              <div class="form-group">
+                <label>Month/Stage</label>
+                <input type="text" id="baby-month" placeholder="e.g. Month 6" required />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Icon (emoji)</label>
+                <input type="text" id="baby-icon" placeholder="e.g. 👣" />
+              </div>
+              <div class="form-group">
+                <label>Order</label>
+                <input type="number" id="baby-order" placeholder="1" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Description</label>
+              <textarea id="baby-description" rows="2" placeholder="What happened..."></textarea>
+            </div>
+            <div class="form-group">
+              <label>Photo URL (optional)</label>
+              <input type="url" id="baby-photoUrl" placeholder="https://shravekjourneyphotos.blob.core.windows.net/photos/..." />
+            </div>
+            <div style="display:flex;gap:1rem;margin-top:1rem">
+              <button type="submit" class="btn btn--dark" style="width:auto;padding:0.6rem 1.5rem">Save</button>
+              <button type="button" class="btn btn--outline" style="padding:0.6rem 1.5rem" onclick="hideForm('baby')">Cancel</button>
+            </div>
+          </form>
+        </div>
+        <div id="list-baby"></div>
+      </section>
+
+      <!-- PHOTOS TAB -->
+      <section class="tab-pane" id="tab-photos">
+        <h1 class="admin-title">Photo Gallery</h1>
+        <div class="admin-toolbar">
+          <button class="btn btn--dark" style="width:auto;padding:0.6rem 1.5rem" onclick="showForm('photos')">+ Add Photo</button>
+        </div>
+        <div id="form-photos" class="admin-card" style="display:none">
+          <h3 class="admin-card__title">Add Photo</h3>
+          <form onsubmit="savePhoto(event)">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Album</label>
+                <input type="text" id="photo-album" placeholder="e.g. baby-shower, wedding, travel" required />
+              </div>
+              <div class="form-group">
+                <label>Caption</label>
+                <input type="text" id="photo-caption" placeholder="e.g. Our first dance" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Photo URL (from Azure Blob Storage)</label>
+              <input type="url" id="photo-url" placeholder="https://shravekjourneyphotos.blob.core.windows.net/photos/..." required />
+            </div>
+            <div class="form-group">
+              <label>Order</label>
+              <input type="number" id="photo-order" placeholder="1" />
+            </div>
+            <div style="display:flex;gap:1rem;margin-top:1rem">
+              <button type="submit" class="btn btn--dark" style="width:auto;padding:0.6rem 1.5rem">Save</button>
+              <button type="button" class="btn btn--outline" style="padding:0.6rem 1.5rem" onclick="hideForm('photos')">Cancel</button>
+            </div>
+          </form>
+        </div>
+        <p class="admin-hint">Upload photos to <a href="https://portal.azure.com" target="_blank">Azure Portal</a> → Storage Account → <code>shravekjourneyphotos</code> → <code>photos</code> container, then paste the URL here.</p>
+        <div id="list-photos" class="photo-admin-grid"></div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="js/admin.js"></script>
+</body>
+</html>
