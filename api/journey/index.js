@@ -81,6 +81,10 @@ module.exports = async function (context, req) {
         if (req.method === "DELETE") return await handleDeleteRegistryItem(context, req);
         break;
 
+      case "registry-update":
+        if (req.method === "PUT") return await handleUpdateRegistryItem(context, req);
+        break;
+
       case "registry-unclaim":
         if (req.method === "PUT") return await handleUnclaimRegistryItem(context, req);
         break;
@@ -672,6 +676,36 @@ async function handleClaimRegistryItem(context, req) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ success: true, item: doc })
   };
+}
+
+async function handleUpdateRegistryItem(context, req) {
+  const body = req.body || {};
+  if (!body.id) {
+    context.res = { status: 400, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: "Item ID required." }) };
+    return;
+  }
+  const container = getContainer();
+  const { resource: doc } = await container.item(body.id, "registry").read();
+  if (!doc) {
+    context.res = { status: 404, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: "Item not found." }) };
+    return;
+  }
+  if (body.name) doc.name = body.name;
+  if (body.price) doc.price = body.price;
+  if (body.amazonUrl !== undefined) doc.amazonUrl = body.amazonUrl;
+  if (body.image !== undefined) doc.image = body.image;
+  if (body.status) {
+    doc.status = body.status;
+    if (body.status === "available") {
+      doc.claimed = false;
+      delete doc.claimedBy;
+      delete doc.claimedEmail;
+      delete doc.claimedAt;
+    }
+  }
+  doc.updatedAt = new Date().toISOString();
+  await container.item(body.id, "registry").replace(doc);
+  context.res = { status: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: true, item: doc }) };
 }
 
 async function handleDeleteRegistryItem(context, req) {

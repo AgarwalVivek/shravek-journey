@@ -63,6 +63,7 @@ function renderTimeline() {
       <h3 class="timeline-item__title">${item.title}</h3>
       <p class="timeline-item__desc">${item.description || ''}</p>
       ${item.photoUrl ? `<img src="${item.photoUrl}" alt="${item.title}" class="timeline-item__photo" />` : ''}
+      ${item.album ? renderAlbumPhotos(item.album) : ''}
     </div>
   `).join('');
 }
@@ -113,6 +114,15 @@ function renderBaby() {
       ${item.photoUrl ? `<img src="${item.photoUrl}" alt="${item.title}" style="width:100%;margin-top:0.75rem;border-radius:4px" />` : ''}
     </div>
   `).join('');
+}
+
+// ── Render Album Photos (inline in timeline) ────────────
+function renderAlbumPhotos(album) {
+  const photos = (journeyData.photos || []).filter(p => p.album === album);
+  if (photos.length === 0) return '';
+  return `<div class="timeline-album-grid">${photos.map(p =>
+    `<img src="${p.url}" alt="${p.caption || album}" class="timeline-album-grid__img" />`
+  ).join('')}</div>`;
 }
 
 // ── Render Gallery ───────────────────────────────────────
