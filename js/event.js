@@ -61,7 +61,7 @@
               ${isGone
                 ? `<div class="registry-card__gone-badge">GONE 🎉</div>
                    <div class="registry-card__claimed">Claimed by ${item.claimedBy || 'someone'}</div>`
-                : `<button class="registry-card__btn" onclick="openClaimModal('${item.id}', '${item.name.replace(/'/g, "\\'")}')">I'll Get This!</button>`
+                : `<button class="registry-card__btn" onclick="openClaimModal('${item.id}', '${item.name.replace(/'/g, "\\'")}', '${(item.amazonUrl || item.url || '').replace(/'/g, "\\'")}')">I'll Get This!</button>`
               }
               ${item.amazonUrl || item.url ? `<a href="${item.amazonUrl || item.url}" target="_blank" class="registry-card__amazon">View on Amazon →</a>` : ''}
             </div>
@@ -241,9 +241,10 @@
   };
 
   // ─── Claim Modal ────────────────────────────────────────
-  window.openClaimModal = function (id, name) {
+  window.openClaimModal = function (id, name, amazonUrl) {
     document.getElementById('claim-item-id').value = id;
     document.getElementById('claim-item-name').textContent = name;
+    window._claimAmazonUrl = amazonUrl || '';
     document.getElementById('claim-modal').style.display = 'flex';
   };
 
@@ -280,6 +281,23 @@
       if (data.success) {
         closeClaimModal();
         loadRegistry();
+        // Show Amazon reminder if the item has an Amazon link
+        if (window._claimAmazonUrl) {
+          const reminder = document.createElement('div');
+          reminder.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:1000';
+          reminder.innerHTML = `
+            <div style="background:white;border-radius:12px;padding:2rem;max-width:400px;width:90%;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.3)">
+              <div style="font-size:2rem;margin-bottom:0.75rem">🎉 Gift Claimed!</div>
+              <p style="font-size:0.95rem;color:#333;margin-bottom:1rem">Thank you, <strong>${claimedBy}</strong>! You've claimed <strong>${itemName}</strong>.</p>
+              <div style="background:#FFF7ED;border:1px solid #F59E0B;border-radius:8px;padding:1rem;margin-bottom:1rem">
+                <p style="font-size:0.85rem;color:#92400E;margin:0 0 0.5rem 0">⚠️ <strong>Important:</strong> Please also mark this item as purchased on the Amazon registry so others don't buy it too!</p>
+                <a href="${window._claimAmazonUrl}" target="_blank" style="display:inline-block;background:#FF9900;color:white;padding:0.5rem 1.25rem;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.9rem">Open on Amazon →</a>
+              </div>
+              <button onclick="this.closest('div[style]').remove()" style="background:var(--rose,#B45C6E);color:white;border:none;padding:0.5rem 1.5rem;border-radius:6px;cursor:pointer;font-size:0.9rem">Got it!</button>
+            </div>`;
+          document.body.appendChild(reminder);
+          reminder.addEventListener('click', (ev) => { if (ev.target === reminder) reminder.remove(); });
+        }
       } else {
         alert('Error: ' + (data.error || 'Could not claim gift'));
       }
