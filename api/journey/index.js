@@ -373,7 +373,7 @@ async function handleCreateEvent(context, req) {
   const event = {
     id: "event_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
     category: "event",
-    title: body.title,
+    name: body.name || body.title,
     date: body.date,
     description: body.description,
     type: body.type,

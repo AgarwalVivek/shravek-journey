@@ -162,11 +162,11 @@
       list.innerHTML = events.map(ev => `
         <div class="admin-item">
           <div class="admin-item__info">
-            <h3>${ev.title}</h3>
+            <h3>${ev.name || ev.title}</h3>
             <p>${ev.date || ''} — <a href="event.html?id=${ev.id}" target="_blank">View public page →</a></p>
           </div>
           <div class="admin-item__actions">
-            <button onclick="manageEvent('${ev.id}','${ev.title.replace(/'/g, "\\'")}')">Registry</button>
+            <button onclick="manageEvent('${ev.id}','${(ev.name || ev.title || '').replace(/'/g, "\\'")}')">Registry</button>
             <button onclick="viewRsvps('${ev.id}')">RSVPs</button>
             <button class="btn-danger" onclick="deleteEvent('${ev.id}')">Delete</button>
           </div>
@@ -187,7 +187,7 @@
   window.saveEvent = async function (e) {
     e.preventDefault();
     const body = {
-      title: document.getElementById('event-title-input').value.trim(),
+      name: document.getElementById('event-title-input').value.trim(),
       date: document.getElementById('event-date-input').value.trim(),
       description: document.getElementById('event-desc-input').value.trim(),
       type: document.getElementById('event-type-input').value
