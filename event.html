@@ -83,6 +83,17 @@
     <div class="container">
       <h2 class="section-title">Gift Registry</h2>
       <p class="section-subtitle">Every little gift means the world to us 🎁</p>
+
+      <!-- My Claims lookup -->
+      <div style="margin-bottom:2rem;padding:1rem 1.5rem;background:#fff;border:1px solid var(--border);border-radius:6px">
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.75rem">Already claimed something? Enter your email to view or change your claims.</p>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+          <input type="email" id="claims-lookup-email" placeholder="your@email.com" style="flex:1;min-width:200px;padding:0.5rem 0.75rem;border:1px solid #ccc;border-radius:4px" />
+          <button type="button" class="btn btn--outline" onclick="lookupMyClaims()" style="padding:0.5rem 1rem">My Claims</button>
+        </div>
+        <div id="my-claims-list" style="margin-top:1rem"></div>
+      </div>
+
       <div class="registry-grid" id="registry-grid">
         <p class="loading">Loading gifts...</p>
       </div>

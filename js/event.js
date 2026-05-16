@@ -172,6 +172,55 @@
     }
   };
 
+  // ─── My Claims (lookup + unclaim) ─────────────────────────
+  window.lookupMyClaims = async function () {
+    const email = document.getElementById('claims-lookup-email').value.trim();
+    const list = document.getElementById('my-claims-list');
+    if (!email) { list.innerHTML = '<p style="color:#991b1b;font-size:0.8rem">Please enter your email.</p>'; return; }
+
+    list.innerHTML = '<p style="color:var(--muted);font-size:0.8rem">Looking up...</p>';
+    try {
+      const res = await fetch('/api/journey/my-claims?email=' + encodeURIComponent(email));
+      const data = await res.json();
+      if (data.success && data.items && data.items.length > 0) {
+        list.innerHTML = `
+          <p style="font-size:0.8rem;color:#2a7c4f;margin-bottom:0.75rem">You've claimed ${data.items.length} gift(s):</p>
+          ${data.items.map(item => `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.75rem;background:var(--ivory);border:1px solid var(--border);border-radius:4px;margin-bottom:0.5rem">
+              <span style="font-size:0.85rem;font-weight:500">${item.name} ${item.price ? '— ' + item.price : ''}</span>
+              <button onclick="unclaimItem('${item.id}','${email}')" style="background:#991b1b;color:white;border:none;padding:0.3rem 0.75rem;border-radius:3px;font-size:0.7rem;cursor:pointer">Unclaim</button>
+            </div>
+          `).join('')}
+          <p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem">Changed your mind? Click Unclaim to release the gift back to the list.</p>
+        `;
+      } else {
+        list.innerHTML = '<p style="color:var(--muted);font-size:0.8rem">No claims found for this email.</p>';
+      }
+    } catch (e) {
+      list.innerHTML = '<p style="color:#991b1b;font-size:0.8rem">Error looking up claims.</p>';
+    }
+  };
+
+  window.unclaimItem = async function (id, email) {
+    if (!confirm('Unclaim this gift? It will go back to the available list.')) return;
+    try {
+      const res = await fetch('/api/journey/registry-unclaim', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, email })
+      });
+      const data = await res.json();
+      if (data.success) {
+        lookupMyClaims(); // Refresh claims list
+        loadRegistry();   // Refresh the main grid
+      } else {
+        alert('Error: ' + (data.error || 'Could not unclaim'));
+      }
+    } catch (e) {
+      alert('Error unclaiming gift.');
+    }
+  };
+
   // ─── Claim Modal ────────────────────────────────────────
   window.openClaimModal = function (id, name) {
     document.getElementById('claim-item-id').value = id;
