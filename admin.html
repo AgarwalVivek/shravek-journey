@@ -260,6 +260,17 @@
         <div id="registry-mgmt" class="admin-card" style="display:none;margin-top:2rem">
           <h3 class="admin-card__title">Registry — <span id="registry-event-title"></span></h3>
           <input type="hidden" id="registry-event-id" />
+
+          <!-- Amazon Import -->
+          <div style="background:#FFF8E1;border:1px solid #FFD54F;padding:1rem 1.5rem;margin-bottom:1.5rem;border-radius:4px">
+            <label style="font-weight:500;font-size:0.85rem;display:block;margin-bottom:0.5rem">🛒 Quick Import from Amazon</label>
+            <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
+              <input type="url" id="amazon-import-url" placeholder="Paste Amazon product link here..." style="flex:1;min-width:250px;padding:0.5rem 0.75rem;border:1px solid #ccc;border-radius:3px" />
+              <button type="button" onclick="importFromAmazon()" class="btn btn--dark" style="width:auto;padding:0.5rem 1.2rem;white-space:nowrap">Import</button>
+            </div>
+            <p id="amazon-import-status" style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem"></p>
+          </div>
+
           <form onsubmit="saveRegistryItem(event)" style="margin-bottom:1.5rem">
             <div class="form-row">
               <div class="form-group">

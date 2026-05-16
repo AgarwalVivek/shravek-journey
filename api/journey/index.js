@@ -78,6 +78,10 @@ module.exports = async function (context, req) {
         if (req.method === "POST") return await handleAnalyzePhoto(context, req);
         break;
 
+      case "scrape-amazon":
+        if (req.method === "POST") return await handleScrapeAmazon(context, req);
+        break;
+
       case "all":
         return await handleGetAll(context);
 
@@ -685,4 +689,105 @@ async function savePhotoWithAlbum(context, url, caption, album, aiTags, faceCoun
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ success: true, photo })
   };
+}
+
+// --- Amazon Product Scraper ---
+
+async function handleScrapeAmazon(context, req) {
+  const { url } = req.body || {};
+  if (!url) {
+    context.res = {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ success: false, error: "URL is required." })
+    };
+    return;
+  }
+
+  try {
+    const https = require("https");
+    const http = require("http");
+    const parsedUrl = new URL(url);
+    const client = parsedUrl.protocol === "https:" ? https : http;
+
+    const html = await new Promise((resolve, reject) => {
+      const options = {
+        hostname: parsedUrl.hostname,
+        path: parsedUrl.pathname + parsedUrl.search,
+        method: "GET",
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.9",
+          "Accept-Encoding": "identity"
+        }
+      };
+      const request = client.request(options, (res) => {
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          const redirectUrl = new URL(res.headers.location, url);
+          const rClient = redirectUrl.protocol === "https:" ? https : http;
+          rClient.get(redirectUrl.href, { headers: options.headers }, (rRes) => {
+            let data = "";
+            rRes.on("data", chunk => data += chunk);
+            rRes.on("end", () => resolve(data));
+          }).on("error", reject);
+          return;
+        }
+        let data = "";
+        res.on("data", chunk => data += chunk);
+        res.on("end", () => resolve(data));
+      });
+      request.on("error", reject);
+      request.end();
+    });
+
+    const product = parseAmazonHtml(html, url);
+
+    context.res = {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ success: true, product })
+    };
+  } catch (e) {
+    context.log.error("Amazon scrape error:", e.message);
+    context.res = {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ success: false, error: "Could not fetch product details." })
+    };
+  }
+}
+
+function parseAmazonHtml(html, url) {
+  const product = { name: "", price: "", image: "", url };
+
+  // Extract title
+  const titleMatch = html.match(/<span[^>]*id="productTitle"[^>]*>([\s\S]*?)<\/span>/i)
+    || html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  if (titleMatch) {
+    product.name = titleMatch[1].replace(/<[^>]+>/g, "").trim()
+      .replace(/Amazon\.in\s*[:\-]\s*/i, "")
+      .replace(/\s*[:\-]\s*Amazon\.in/i, "")
+      .substring(0, 120);
+  }
+
+  // Extract price
+  const priceMatch = html.match(/class="a-price-whole"[^>]*>([\d,]+)/i)
+    || html.match(/id="priceblock_ourprice"[^>]*>[^₹]*₹\s*([\d,]+)/i)
+    || html.match(/₹\s*([\d,]+(?:\.\d+)?)/i)
+    || html.match(/class="a-offscreen"[^>]*>₹([\d,]+)/i);
+  if (priceMatch) {
+    product.price = "₹" + priceMatch[1].trim();
+  }
+
+  // Extract image
+  const imgMatch = html.match(/"hiRes"\s*:\s*"(https:[^"]+)"/i)
+    || html.match(/"large"\s*:\s*"(https:[^"]+)"/i)
+    || html.match(/id="landingImage"[^>]*src="(https:[^"]+)"/i)
+    || html.match(/data-old-hires="(https:[^"]+)"/i);
+  if (imgMatch) {
+    product.image = imgMatch[1];
+  }
+
+  return product;
 }

@@ -264,6 +264,50 @@
     else alert('Error: ' + (data.error || 'Failed'));
   };
 
+  // ─── Amazon Import ──────────────────────────────────────
+  window.importFromAmazon = async function () {
+    const urlInput = document.getElementById('amazon-import-url');
+    const status = document.getElementById('amazon-import-status');
+    const url = urlInput.value.trim();
+
+    if (!url || (!url.includes('amazon.in') && !url.includes('amazon.com') && !url.includes('amzn.'))) {
+      status.textContent = '❌ Please paste a valid Amazon product URL';
+      status.style.color = '#991b1b';
+      return;
+    }
+
+    status.textContent = '⏳ Fetching product details...';
+    status.style.color = 'var(--muted)';
+
+    try {
+      const res = await fetch(API + '/scrape-amazon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
+      const data = await res.json();
+
+      if (data.success && data.product) {
+        // Auto-fill the form
+        document.getElementById('reg-item-name').value = data.product.name || '';
+        document.getElementById('reg-item-price').value = data.product.price || '';
+        document.getElementById('reg-item-url').value = url;
+        document.getElementById('reg-item-image').value = data.product.image || '';
+        status.textContent = '✅ Product details imported! Review and click "Add to Registry"';
+        status.style.color = '#2a7c4f';
+        urlInput.value = '';
+      } else {
+        status.textContent = '⚠️ Could not fetch details. Fill manually below (URL is set).';
+        status.style.color = '#B45309';
+        document.getElementById('reg-item-url').value = url;
+      }
+    } catch (e) {
+      status.textContent = '⚠️ Import failed. Fill manually below (URL is set).';
+      status.style.color = '#B45309';
+      document.getElementById('reg-item-url').value = url;
+    }
+  };
+
   window.deleteRegistryItem = async function (id, eventId) {
     if (!confirm('Delete this registry item?')) return;
     const res = await fetch(API + '/registry?id=' + id, { method: 'DELETE' });
@@ -278,14 +322,56 @@
       const res = await fetch(API + '/rsvp?eventId=' + eventId);
       const data = await res.json();
       const rsvps = data.rsvps || [];
-      if (rsvps.length === 0) { alert('No RSVPs yet for this event.'); return; }
+
+      // Show RSVPs inline below the events list
+      let container = document.getElementById('rsvp-panel');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'rsvp-panel';
+        container.className = 'admin-card';
+        container.style.marginTop = '2rem';
+        document.getElementById('list-events').parentNode.appendChild(container);
+      }
+      container.style.display = 'block';
+
+      if (rsvps.length === 0) {
+        container.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+            <h3 class="admin-card__title" style="margin:0">RSVPs</h3>
+            <button onclick="document.getElementById('rsvp-panel').style.display='none'" style="background:none;border:none;font-size:1.2rem;cursor:pointer">✕</button>
+          </div>
+          <p style="color:var(--muted)">No RSVPs yet for this event.</p>`;
+        return;
+      }
 
       const totalGuests = rsvps.reduce((sum, r) => sum + (r.guests || 1), 0);
-      let msg = `RSVPs (${rsvps.length} responses, ${totalGuests} total guests):\n\n`;
-      rsvps.forEach(r => {
-        msg += `• ${r.name} (${r.email}) — ${r.guests} guest(s)${r.message ? ' — "' + r.message + '"' : ''}\n`;
-      });
-      alert(msg);
+      container.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+          <h3 class="admin-card__title" style="margin:0">RSVPs — ${rsvps.length} responses, ${totalGuests} guests</h3>
+          <button onclick="document.getElementById('rsvp-panel').style.display='none'" style="background:none;border:none;font-size:1.2rem;cursor:pointer">✕</button>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:0.85rem">
+          <thead>
+            <tr style="text-align:left;border-bottom:2px solid var(--border)">
+              <th style="padding:0.5rem">Name</th>
+              <th style="padding:0.5rem">Email</th>
+              <th style="padding:0.5rem">Guests</th>
+              <th style="padding:0.5rem">Message</th>
+              <th style="padding:0.5rem">Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rsvps.map(r => `
+              <tr style="border-bottom:1px solid var(--border)">
+                <td style="padding:0.5rem;font-weight:500">${r.name || '—'}</td>
+                <td style="padding:0.5rem">${r.email || '—'}</td>
+                <td style="padding:0.5rem;text-align:center">${r.guests || 1}</td>
+                <td style="padding:0.5rem;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis">${r.message || '—'}</td>
+                <td style="padding:0.5rem;font-size:0.75rem">${r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '—'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`;
     } catch (e) {
       alert('Error loading RSVPs');
     }
