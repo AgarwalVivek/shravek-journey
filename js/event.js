@@ -131,6 +131,19 @@
       message: document.getElementById('rsvp-message').value.trim()
     };
 
+    if (!body.name || !body.email) { alert('Please enter your name and email.'); return; }
+
+    // Confirm details before submitting
+    const confirmed = confirm(
+      `Please confirm your RSVP details:\n\n` +
+      `👤 Name: ${body.name}\n` +
+      `📧 Email: ${body.email}\n` +
+      `👥 Guests: ${body.guests}\n` +
+      (body.message ? `💬 Message: ${body.message}\n` : '') +
+      `\nIs this correct?`
+    );
+    if (!confirmed) return;
+
     const existingId = document.getElementById('rsvp-id').value;
     if (existingId) body.id = existingId;
 
@@ -243,6 +256,19 @@
     const id = document.getElementById('claim-item-id').value;
     const claimedBy = document.getElementById('claim-name').value.trim();
     const claimedEmail = document.getElementById('claim-email').value.trim();
+    const itemName = document.getElementById('claim-item-name').textContent;
+
+    if (!claimedBy || !claimedEmail) { alert('Please enter your name and email.'); return; }
+
+    // Confirm details before claiming
+    const confirmed = confirm(
+      `Please confirm your details:\n\n` +
+      `🎁 Gift: ${itemName}\n` +
+      `👤 Name: ${claimedBy}\n` +
+      `📧 Email: ${claimedEmail}\n` +
+      `\nIs this correct?`
+    );
+    if (!confirmed) return;
 
     try {
       const res = await fetch('/api/journey/registry', {

@@ -140,6 +140,21 @@ function renderBaby() {
   `).join('');
 }
 
+// ── Helper: detect video URLs ────────────────────────────
+function isVideo(item) {
+  if (item.type === 'video') return true;
+  if (item.url && /\.(mov|mp4|webm|ogg)$/i.test(item.url)) return true;
+  return false;
+}
+
+function renderMediaTag(item, cssClass, alt) {
+  if (!item.url) return item.emoji || '📷';
+  if (isVideo(item)) {
+    return `<video src="${item.url}" class="${cssClass}" controls playsinline preload="metadata" title="${alt}"></video>`;
+  }
+  return `<img src="${item.url}" alt="${alt}" class="${cssClass}" loading="lazy" />`;
+}
+
 // ── Render Album Photos (inline in timeline) ────────────
 function renderAlbumPhotos(album) {
   const photos = (journeyData.photos || []).filter(p => p.album === album);
@@ -147,7 +162,7 @@ function renderAlbumPhotos(album) {
   return `
     <button class="timeline-album-toggle" onclick="this.nextElementSibling.classList.toggle('open');this.textContent=this.nextElementSibling.classList.contains('open')?'Hide Photos ▲':'View Photos ▼'">View Photos ▼</button>
     <div class="timeline-album-grid">${photos.map(p =>
-      `<img src="${p.url}" alt="${p.caption || album}" class="timeline-album-grid__img" loading="lazy" />`
+      renderMediaTag(p, 'timeline-album-grid__img', p.caption || album)
     ).join('')}</div>`;
 }
 
@@ -163,10 +178,7 @@ function renderGallery() {
 
   container.innerHTML = items.map(item => `
     <div class="gallery-item" title="${item.caption || ''}">
-      ${item.url
-        ? `<img src="${item.url}" alt="${item.caption || ''}" />`
-        : (item.emoji || '📷')
-      }
+      ${renderMediaTag(item, '', item.caption || '')}
     </div>
   `).join('');
 }
