@@ -60,6 +60,8 @@ body {
   transition: color var(--transition);
 }
 .nav__links a:hover { color: var(--rose-lt); }
+.nav__admin-link { opacity: 0.5; font-size: 0.75em; }
+.nav__admin-link:hover { opacity: 1; }
 .nav__burger {
   display: none;
   background: none; border: none; color: white;
