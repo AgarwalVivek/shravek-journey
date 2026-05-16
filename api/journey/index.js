@@ -59,6 +59,7 @@ module.exports = async function (context, req) {
       case "events":
         if (req.method === "GET") return await handleGetEvents(context, req);
         if (req.method === "POST") return await handleCreateEvent(context, req);
+        if (req.method === "PUT") return await handleUpdateEvent(context, req);
         if (req.method === "DELETE") return await handleDeleteEvent(context, req);
         break;
 
@@ -408,6 +409,29 @@ async function handleCreateEvent(context, req) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ success: true, event })
   };
+}
+
+async function handleUpdateEvent(context, req) {
+  const body = req.body || {};
+  if (!body.id) {
+    context.res = { status: 400, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: "Event ID is required." }) };
+    return;
+  }
+  const container = getContainer();
+  const { resource: existing } = await container.item(body.id, "event").read();
+  if (!existing) {
+    context.res = { status: 404, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: "Event not found." }) };
+    return;
+  }
+  const updated = { ...existing };
+  if (body.name) updated.name = body.name;
+  if (body.date) updated.date = body.date;
+  if (body.description !== undefined) updated.description = body.description;
+  if (body.type) updated.type = body.type;
+  updated.updatedAt = new Date().toISOString();
+
+  await container.item(body.id, "event").replace(updated);
+  context.res = { status: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: true, event: updated }) };
 }
 
 async function handleDeleteEvent(context, req) {
