@@ -8,7 +8,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
 </head>
-<body>
+<body class="loading">
+
+  <!-- PRELOADER -->
+  <div class="preloader" id="preloader">
+    <div class="preloader__content">
+      <div class="preloader__logo">Shravek</div>
+      <div class="preloader__tagline">Our Journey Together</div>
+      <div class="preloader__spinner"></div>
+    </div>
+  </div>
 
   <!-- NAV -->
   <nav class="nav" id="navbar">
@@ -107,6 +116,38 @@
     if (sessionStorage.getItem('adminToken') || localStorage.getItem('adminToken')) {
       document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
     }
+
+    // Preloader: wait for key images then reveal with animations
+    (function() {
+      const preloader = document.getElementById('preloader');
+      const heroImages = document.querySelectorAll('.wedding-banner__img, .hero__photo-full');
+      let loaded = 0;
+      const total = heroImages.length;
+      const MAX_WAIT = 4000; // max 4s even if images are slow
+
+      function reveal() {
+        if (document.body.classList.contains('revealed')) return;
+        document.body.classList.remove('loading');
+        document.body.classList.add('revealed');
+        preloader.classList.add('preloader--hidden');
+        setTimeout(() => preloader.remove(), 800);
+      }
+
+      // Fallback timer — always reveal after MAX_WAIT
+      setTimeout(reveal, MAX_WAIT);
+
+      if (total === 0) { reveal(); return; }
+
+      heroImages.forEach(img => {
+        if (img.complete) { loaded++; }
+        else {
+          img.addEventListener('load', () => { loaded++; if (loaded >= total) reveal(); });
+          img.addEventListener('error', () => { loaded++; if (loaded >= total) reveal(); });
+        }
+      });
+
+      if (loaded >= total) setTimeout(reveal, 600); // small delay for polish
+    })();
   </script>
 </body>
 </html>
