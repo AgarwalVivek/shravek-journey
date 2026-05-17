@@ -102,7 +102,9 @@ function renderTravel() {
     return;
   }
 
-  container.innerHTML = items.map(trip => `
+  container.innerHTML = items.map(trip => {
+    const albumLink = trip.album ? `<a href="album.html?album=${encodeURIComponent(trip.album)}" class="btn btn--dark travel-card__photos">View Photos →</a>` : '';
+    return `
     <div class="travel-card">
       <div class="travel-card__img">
         ${trip.photoUrl
@@ -114,9 +116,10 @@ function renderTravel() {
         <h3 class="travel-card__name">${trip.destination || trip.title || ''}</h3>
         <p class="travel-card__date">${trip.date || ''}</p>
         <p class="travel-card__desc">${trip.description || ''}</p>
+        ${albumLink}
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 // ── Render Baby Journey ──────────────────────────────────
@@ -129,15 +132,18 @@ function renderBaby() {
     return;
   }
 
-  container.innerHTML = items.map(item => `
+  container.innerHTML = items.map(item => {
+    const albumLink = item.album ? `<a href="album.html?album=${encodeURIComponent(item.album)}" class="btn btn--dark baby-card__photos">View Photos →</a>` : '';
+    return `
     <div class="baby-card">
       <div class="baby-card__icon">${item.icon || '👶'}</div>
       <div class="baby-card__month">${item.month || ''}</div>
       <h3 class="baby-card__title">${item.title || ''}</h3>
       <p class="baby-card__desc">${item.description || ''}</p>
       ${item.photoUrl ? `<img src="${item.photoUrl}" alt="${item.title}" style="width:100%;margin-top:0.75rem;border-radius:4px" />` : ''}
-    </div>
-  `).join('');
+      ${albumLink}
+    </div>`;
+  }).join('');
 }
 
 // ── Helper: detect video URLs ────────────────────────────
@@ -155,15 +161,12 @@ function renderMediaTag(item, cssClass, alt) {
   return `<img src="${item.url}" alt="${alt}" class="${cssClass}" loading="lazy" />`;
 }
 
-// ── Render Album Photos (inline in timeline) ────────────
+// ── Render Album Photos (link to album page) ────────────
 function renderAlbumPhotos(album) {
   const photos = (journeyData.photos || []).filter(p => p.album === album);
   if (photos.length === 0) return '';
   return `
-    <button class="timeline-album-toggle" onclick="this.nextElementSibling.classList.toggle('open');this.textContent=this.nextElementSibling.classList.contains('open')?'Hide Photos ▲':'View Photos ▼'">View Photos ▼</button>
-    <div class="timeline-album-grid">${photos.map(p =>
-      renderMediaTag(p, 'timeline-album-grid__img', p.caption || album)
-    ).join('')}</div>`;
+    <a href="album.html?album=${encodeURIComponent(album)}" class="btn btn--dark timeline-album-link">View Photos →</a>`;
 }
 
 // ── Render Gallery ───────────────────────────────────────

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Album — Shravek Journey</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    .album-hero {
+      padding: 4rem 2rem 2rem;
+      text-align: center;
+      background: var(--ivory, #faf8f5);
+    }
+    .album-hero__back {
+      display: inline-block;
+      margin-bottom: 1rem;
+      font-size: 0.85rem;
+      color: var(--muted, #888);
+      text-decoration: none;
+    }
+    .album-hero__back:hover { color: var(--dark, #222); }
+    .album-hero__title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.5rem;
+      font-weight: 300;
+      color: var(--dark, #222);
+      text-transform: capitalize;
+    }
+    .album-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+      padding: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .album-grid__item {
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      transition: transform 0.2s;
+    }
+    .album-grid__item:hover { transform: translateY(-3px); }
+    .album-grid__item img,
+    .album-grid__item video {
+      width: 100%;
+      height: 260px;
+      object-fit: cover;
+      display: block;
+    }
+    .album-grid__caption {
+      padding: 0.75rem 1rem;
+      font-size: 0.85rem;
+      color: var(--muted, #666);
+      text-align: center;
+    }
+    .album-empty {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--muted, #888);
+      font-size: 1.1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <section class="album-hero">
+    <a href="index.html" class="album-hero__back">← Back to Journey</a>
+    <h1 class="album-hero__title" id="album-title">Album</h1>
+  </section>
+
+  <div class="album-grid" id="album-grid">
+    <p class="album-empty">Loading photos...</p>
+  </div>
+
+  <footer class="footer">
+    <div class="footer__logo">Shravek</div>
+    <p class="footer__tag">Our journey, our story</p>
+    <p class="footer__copy">&copy; 2025 Shravek Journey. Made with ❤️</p>
+  </footer>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const albumName = params.get('album') || '';
+
+    document.getElementById('album-title').textContent = albumName ? albumName.charAt(0).toUpperCase() + albumName.slice(1) + ' Photos' : 'Album';
+    document.title = (albumName || 'Album') + ' — Shravek Journey';
+
+    async function loadAlbum() {
+      let photos = [];
+
+      try {
+        const res = await fetch('/api/journey/photos');
+        const data = await res.json();
+        if (data.success !== false && data.items) {
+          photos = data.items;
+        }
+      } catch (e) {
+        console.log('API unavailable, no photos to show');
+      }
+
+      // Filter by album if specified
+      if (albumName) {
+        photos = photos.filter(p => p.album === albumName);
+      }
+
+      const grid = document.getElementById('album-grid');
+
+      if (photos.length === 0) {
+        grid.innerHTML = '<p class="album-empty">No photos in this album yet.</p>';
+        return;
+      }
+
+      grid.innerHTML = photos.map(photo => {
+        const isVideo = photo.type === 'video' || (photo.url && /\.(mov|mp4|webm|ogg)$/i.test(photo.url));
+        const media = !photo.url
+          ? `<div style="height:260px;display:flex;align-items:center;justify-content:center;font-size:4rem;background:#f9f7f4">${photo.emoji || '📷'}</div>`
+          : isVideo
+            ? `<video src="${photo.url}" controls playsinline preload="metadata"></video>`
+            : `<img src="${photo.url}" alt="${photo.caption || ''}" loading="lazy" />`;
+
+        return `
+          <div class="album-grid__item">
+            ${media}
+            ${photo.caption ? `<div class="album-grid__caption">${photo.caption}</div>` : ''}
+          </div>`;
+      }).join('');
+    }
+
+    loadAlbum();
+  </script>
+</body>
+</html>

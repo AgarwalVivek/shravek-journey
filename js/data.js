@@ -29,7 +29,7 @@ const JOURNEY_DATA = {
       date: '2023',
       icon: '🏠',
       title: 'Our First Home',
-      description: 'Building our nest — filling it with love and laughter.'
+      description: 'Built our nest — filling it with love, laughter, and dreams.'
     },
     {
       date: '2024',
