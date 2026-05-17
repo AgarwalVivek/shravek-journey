@@ -49,6 +49,7 @@
             <p>${item.date || item.month || ''} — ${(item.description || '').substring(0, 60)}...</p>
           </div>
           <div class="admin-item__actions">
+            <button onclick='editItem(${JSON.stringify(item).replace(/'/g,"&#39;")},"${cat}")'>Edit</button>
             <button onclick="deleteItem('${item.id}','${cat}')">Delete</button>
           </div>
         </div>
@@ -63,29 +64,66 @@
   };
   window.hideForm = function (cat) {
     document.getElementById('form-' + cat).style.display = 'none';
+    // Clear edit mode
+    const editId = document.getElementById(cat + '-edit-id');
+    if (editId) editId.value = '';
+  };
+
+  window.editItem = function (item, cat) {
+    showForm(cat);
+    // Populate form fields
+    const fields = {
+      timeline: ['title', 'date', 'icon', 'order', 'description', 'photoUrl', 'album'],
+      travel: ['destination', 'date', 'icon', 'order', 'description', 'photoUrl', 'album'],
+      baby: ['title', 'month', 'icon', 'order', 'description', 'photoUrl', 'album']
+    };
+    (fields[cat] || []).forEach(f => {
+      const el = document.getElementById(cat + '-' + f);
+      if (el) el.value = item[f] || '';
+    });
+    // Set edit ID so save knows to update
+    const editId = document.getElementById(cat + '-edit-id');
+    if (editId) editId.value = item.id;
   };
 
   window.saveItem = async function (e, cat) {
     e.preventDefault();
     const body = {};
     const fields = {
-      timeline: ['title', 'date', 'icon', 'order', 'description', 'photoUrl'],
-      travel: ['destination', 'date', 'icon', 'order', 'description', 'photoUrl'],
-      baby: ['title', 'month', 'icon', 'order', 'description', 'photoUrl']
+      timeline: ['title', 'date', 'icon', 'order', 'description', 'photoUrl', 'album'],
+      travel: ['destination', 'date', 'icon', 'order', 'description', 'photoUrl', 'album'],
+      baby: ['title', 'month', 'icon', 'order', 'description', 'photoUrl', 'album']
     };
     (fields[cat] || []).forEach(f => {
       const el = document.getElementById(cat + '-' + f);
       if (el && el.value.trim()) body[f] = f === 'order' ? parseInt(el.value) : el.value.trim();
     });
 
-    const res = await fetch(API + '/' + cat, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
+    const editId = document.getElementById(cat + '-edit-id');
+    const isEdit = editId && editId.value;
+
+    let res;
+    if (isEdit) {
+      // Update existing item
+      body.id = editId.value;
+      body.category = cat;
+      res = await fetch(API + '/' + cat, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+    } else {
+      // Create new item
+      res = await fetch(API + '/' + cat, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+    }
+
     const data = await res.json();
     if (data.success) {
-      showStatus('Item saved!');
+      showStatus(isEdit ? 'Item updated!' : 'Item saved!');
       hideForm(cat);
       e.target.reset();
       loadCategory(cat);

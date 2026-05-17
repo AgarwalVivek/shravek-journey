@@ -93,18 +93,19 @@
       let photos = [];
 
       try {
-        const res = await fetch('/api/journey/photos');
+        const res = await fetch('/api/journey/photos' + (albumName ? '?album=' + encodeURIComponent(albumName) : ''));
         const data = await res.json();
-        if (data.success !== false && data.items) {
-          photos = data.items;
+        if (data.success !== false && (data.photos || data.items)) {
+          photos = data.photos || data.items;
         }
       } catch (e) {
         console.log('API unavailable, no photos to show');
       }
 
-      // Filter by album if specified
-      if (albumName) {
-        photos = photos.filter(p => p.album === albumName);
+      // Filter by album if specified (in case API didn't filter)
+      if (albumName && photos.length > 0) {
+        const filtered = photos.filter(p => p.album === albumName);
+        if (filtered.length > 0) photos = filtered;
       }
 
       const grid = document.getElementById('album-grid');
