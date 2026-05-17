@@ -725,4 +725,90 @@
     document.body.appendChild(el);
     setTimeout(() => el.remove(), 3000);
   }
+
+  // ─── Bulk Photo Manager ─────────────────────────────────
+  let bulkPhotos = [];
+
+  window.loadBlobPhotos = async function () {
+    const grid = document.getElementById('bulk-photo-grid');
+    const status = document.getElementById('bulk-status');
+    grid.innerHTML = '<p style="color:var(--muted)">Loading photos from storage...</p>';
+    try {
+      const res = await fetch(API + '/blob-photos');
+      const data = await res.json();
+      if (!data.success) { grid.innerHTML = '<p style="color:#991b1b">Error: ' + (data.error || 'Failed') + '</p>'; return; }
+      bulkPhotos = data.photos || [];
+      const uncategorized = bulkPhotos.filter(p => !p.inGallery);
+      const categorized = bulkPhotos.filter(p => p.inGallery);
+      status.textContent = `${bulkPhotos.length} total blobs | ${uncategorized.length} uncategorized | ${categorized.length} already in gallery`;
+
+      grid.innerHTML = bulkPhotos.map((p, i) => `
+        <div class="bulk-photo-item ${p.inGallery ? 'in-gallery' : ''}" data-url="${p.url}" data-index="${i}" onclick="toggleBulkSelect(this)">
+          <img src="${p.url}" alt="${p.name}" loading="lazy" style="width:100%;height:120px;object-fit:cover;border-radius:4px" />
+          <div style="font-size:0.65rem;color:var(--muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding:0.25rem">${p.name.split('/').pop()}</div>
+          ${p.inGallery ? '<div style="position:absolute;top:4px;right:4px;background:#22c55e;color:white;font-size:0.6rem;padding:2px 5px;border-radius:3px">✓ In Gallery</div>' : ''}
+          <input type="checkbox" class="bulk-check" style="position:absolute;top:4px;left:4px;width:18px;height:18px" />
+        </div>
+      `).join('');
+    } catch (e) {
+      grid.innerHTML = '<p style="color:#991b1b">Error loading blob photos.</p>';
+    }
+  };
+
+  window.toggleBulkSelect = function (el) {
+    const cb = el.querySelector('.bulk-check');
+    cb.checked = !cb.checked;
+    el.classList.toggle('selected', cb.checked);
+  };
+
+  window.bulkSelectAll = function () {
+    document.querySelectorAll('.bulk-photo-item').forEach(el => {
+      el.querySelector('.bulk-check').checked = true;
+      el.classList.add('selected');
+    });
+  };
+
+  window.bulkDeselectAll = function () {
+    document.querySelectorAll('.bulk-photo-item').forEach(el => {
+      el.querySelector('.bulk-check').checked = false;
+      el.classList.remove('selected');
+    });
+  };
+
+  window.bulkAssignPhotos = async function () {
+    const album = document.getElementById('bulk-album-custom').value.trim() || document.getElementById('bulk-album-select').value;
+    if (!album) { alert('Please select or type an album name.'); return; }
+
+    const selected = document.querySelectorAll('.bulk-photo-item .bulk-check:checked');
+    if (selected.length === 0) { alert('Please select at least one photo.'); return; }
+
+    const status = document.getElementById('bulk-status');
+    status.textContent = `Assigning ${selected.length} photos to "${album}"...`;
+
+    let success = 0;
+    for (const cb of selected) {
+      const item = cb.closest('.bulk-photo-item');
+      const url = item.dataset.url;
+      try {
+        const res = await fetch(API + '/photos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ album, url, caption: album.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()), order: success + 1 })
+        });
+        const data = await res.json();
+        if (data.success) success++;
+      } catch (e) { /* continue */ }
+    }
+
+    status.textContent = `✅ Assigned ${success}/${selected.length} photos to "${album}"`;
+    showStatus(`${success} photos added to ${album}!`);
+    loadPhotos();
+    loadBlobPhotos();
+  };
+
+  // Auto-load blob photos when Photos tab is shown
+  const photosTab = document.querySelector('[data-tab="photos"]');
+  if (photosTab) {
+    photosTab.addEventListener('click', () => { setTimeout(loadBlobPhotos, 300); });
+  }
 })();

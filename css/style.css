@@ -70,6 +70,35 @@ body {
   font-size: 1.4rem; cursor: pointer;
 }
 
+/* ── WEDDING BANNER (Full-width photo above hero) ─────── */
+.wedding-banner {
+  position: relative;
+  width: 100%;
+  height: 50vh;
+  overflow: hidden;
+}
+.wedding-banner__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.wedding-banner__overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%);
+}
+.wedding-banner__text {
+  font-family: var(--ff-serif);
+  font-size: clamp(2rem, 5vw, 4rem);
+  color: #fff;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.6);
+  letter-spacing: 0.08em;
+}
+
 /* ── HERO (Three-Panel: Photo | Text | Photo) ───────────── */
 .hero {
   position: relative;

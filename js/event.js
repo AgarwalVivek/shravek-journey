@@ -207,7 +207,7 @@
           ${data.items.map(item => `
             <div style="display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.75rem;background:var(--ivory);border:1px solid var(--border);border-radius:4px;margin-bottom:0.5rem">
               <span style="font-size:0.85rem;font-weight:500">${item.name} ${item.price ? '— ' + item.price : ''}</span>
-              <button onclick="unclaimItem('${item.id}','${email}')" style="background:#991b1b;color:white;border:none;padding:0.3rem 0.75rem;border-radius:3px;font-size:0.7rem;cursor:pointer">Unclaim</button>
+              <button onclick="unclaimItem('${item.id}','${email}','${(item.amazonUrl || item.url || '').replace(/'/g, "\\'")}')" style="background:#991b1b;color:white;border:none;padding:0.3rem 0.75rem;border-radius:3px;font-size:0.7rem;cursor:pointer">Unclaim</button>
             </div>
           `).join('')}
           <p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem">Changed your mind? Click Unclaim to release the gift back to the list.</p>
@@ -220,7 +220,7 @@
     }
   };
 
-  window.unclaimItem = async function (id, email) {
+  window.unclaimItem = async function (id, email, amazonUrl) {
     if (!confirm('Unclaim this gift? It will go back to the available list.')) return;
     try {
       const res = await fetch('/api/journey/registry-unclaim', {
@@ -230,8 +230,20 @@
       });
       const data = await res.json();
       if (data.success) {
-        lookupMyClaims(); // Refresh claims list
-        loadRegistry();   // Refresh the main grid
+        // Show Amazon reminder if URL available
+        if (amazonUrl) {
+          const popup = document.createElement('div');
+          popup.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999';
+          popup.innerHTML = `<div style="background:#fff;padding:2rem;border-radius:12px;max-width:420px;text-align:center">
+            <h3 style="color:#991b1b;margin-bottom:1rem">⚠️ Don't Forget!</h3>
+            <p style="margin-bottom:1rem">Please also <strong>unmark this item as purchased</strong> on Amazon so others can see it's available.</p>
+            <a href="${amazonUrl}" target="_blank" style="display:inline-block;background:#FF9900;color:#000;padding:0.6rem 1.5rem;border-radius:6px;text-decoration:none;font-weight:bold;margin-bottom:1rem">Open on Amazon</a>
+            <br><button onclick="this.closest('div').parentElement.remove()" style="margin-top:0.5rem;padding:0.4rem 1.2rem;border:1px solid #ccc;border-radius:4px;cursor:pointer;background:#f5f5f5">Got it</button>
+          </div>`;
+          document.body.appendChild(popup);
+        }
+        lookupMyClaims();
+        loadRegistry();
       } else {
         alert('Error: ' + (data.error || 'Could not unclaim'));
       }

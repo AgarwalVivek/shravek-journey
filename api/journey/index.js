@@ -36,6 +36,7 @@ module.exports = async function (context, req) {
       case "timeline":
         if (req.method === "GET") return await handleGetByCategory(context, "timeline");
         if (req.method === "POST") return await handleAddItem(context, req, "timeline");
+        if (req.method === "PUT") return await handleUpdateItem(context, req);
         if (req.method === "DELETE") return await handleDeleteItem(context, req);
         break;
 
@@ -127,6 +128,10 @@ module.exports = async function (context, req) {
 
       case "upload-url":
         if (req.method === "POST") return await handleGetUploadUrl(context, req);
+        break;
+
+      case "blob-photos":
+        if (req.method === "GET") return await handleListBlobPhotos(context, req);
         break;
 
       case "all":
@@ -311,6 +316,48 @@ async function handleDeleteItem(context, req) {
     status: 200,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ success: true, message: "Item deleted." })
+  };
+}
+
+// --- Update Item (PUT) ---
+
+async function handleUpdateItem(context, req) {
+  const body = req.body || {};
+  const { id, category } = body;
+
+  if (!id || !category) {
+    context.res = {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ success: false, error: "ID and category are required." })
+    };
+    return;
+  }
+
+  const container = getContainer();
+  const { resource: existing } = await container.item(id, category).read();
+  if (!existing) {
+    context.res = {
+      status: 404,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ success: false, error: "Item not found." })
+    };
+    return;
+  }
+
+  // Merge fields from body into existing (skip id and category)
+  const updated = { ...existing };
+  for (const key of Object.keys(body)) {
+    if (key !== "id" && key !== "_rid" && key !== "_self" && key !== "_etag" && key !== "_attachments" && key !== "_ts") {
+      updated[key] = body[key];
+    }
+  }
+
+  const { resource: result } = await container.item(id, category).replace(updated);
+  context.res = {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ success: true, item: result })
   };
 }
 
@@ -958,6 +1005,49 @@ async function handleGetUploadUrl(context, req) {
     status: 200,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ success: true, uploadUrl, blobUrl })
+  };
+}
+
+// --- List Blob Photos (for admin bulk manager) ---
+async function handleListBlobPhotos(context, req) {
+  const connStr = process.env.STORAGE_CONNECTION_STRING;
+  if (!connStr) {
+    context.res = { status: 500, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: "Storage not configured." }) };
+    return;
+  }
+
+  const blobServiceClient = BlobServiceClient.fromConnectionString(connStr);
+  const containerClient = blobServiceClient.getContainerClient("photos");
+  const prefix = (req.query && req.query.prefix) || "photos/";
+
+  const blobs = [];
+  for await (const blob of containerClient.listBlobsFlat({ prefix })) {
+    if (/\.(jpg|jpeg|png|gif|webp|mp4|mov)$/i.test(blob.name)) {
+      blobs.push({
+        name: blob.name,
+        url: `https://${blobServiceClient.accountName}.blob.core.windows.net/photos/${blob.name}`,
+        size: blob.properties.contentLength,
+        lastModified: blob.properties.lastModified
+      });
+    }
+  }
+
+  // Also get list of photos already in Cosmos to mark which are categorized
+  const container = getContainer();
+  const { resources } = await container.items
+    .query("SELECT c.url FROM c WHERE c.category = 'photo'")
+    .fetchAll();
+  const existingUrls = new Set(resources.map(r => r.url));
+
+  const result = blobs.map(b => ({
+    ...b,
+    inGallery: existingUrls.has(b.url)
+  }));
+
+  context.res = {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ success: true, photos: result })
   };
 }
 

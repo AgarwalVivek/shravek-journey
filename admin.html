@@ -210,6 +210,31 @@
         </div>
         <p class="admin-hint">Upload photos to <a href="https://portal.azure.com" target="_blank">Azure Portal</a> → Storage Account → <code>shravekjourneyphotos</code> → <code>photos</code> container, then paste the URL here.</p>
         <div id="list-photos" class="photo-admin-grid"></div>
+
+        <!-- Bulk Photo Manager -->
+        <hr style="margin:2rem 0;border-color:var(--border)">
+        <h2 class="admin-title" style="font-size:1.3rem">📁 Bulk Photo Manager</h2>
+        <p class="admin-hint">Photos from blob storage that aren't yet categorized. Select photos and assign them to an album.</p>
+        <div style="display:flex;gap:1rem;align-items:center;margin-bottom:1rem;flex-wrap:wrap">
+          <select id="bulk-album-select" style="padding:0.5rem;border-radius:4px;border:1px solid var(--border)">
+            <option value="">— Select Album —</option>
+            <option value="gender-reveal">Gender Reveal</option>
+            <option value="beginnings">Beginnings</option>
+            <option value="wedding-usa">Wedding USA</option>
+            <option value="wedding-india">Wedding India</option>
+            <option value="first-home">First Home</option>
+            <option value="baby-shower">Baby Shower</option>
+            <option value="travel">Travel</option>
+            <option value="general">General</option>
+          </select>
+          <input type="text" id="bulk-album-custom" placeholder="Or type custom album..." style="padding:0.5rem;border-radius:4px;border:1px solid var(--border);width:180px" />
+          <button class="btn btn--dark" style="width:auto;padding:0.5rem 1.2rem" onclick="bulkAssignPhotos()">Assign Selected to Album</button>
+          <button class="btn btn--outline" style="padding:0.5rem 1rem" onclick="bulkSelectAll()">Select All</button>
+          <button class="btn btn--outline" style="padding:0.5rem 1rem" onclick="bulkDeselectAll()">Deselect All</button>
+          <button class="btn btn--outline" style="padding:0.5rem 1rem" onclick="loadBlobPhotos()">🔄 Refresh</button>
+        </div>
+        <div id="bulk-status" style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem"></div>
+        <div id="bulk-photo-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:0.75rem"></div>
       </section>
 
       <!-- EVENTS TAB -->
