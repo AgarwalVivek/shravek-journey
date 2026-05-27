@@ -1,5 +1,90 @@
 /* Event Page Styles */
 
+.event-hero--banner {
+  position: relative;
+  width: 100%;
+  min-height: 400px;
+  overflow: hidden;
+  padding: 0;
+  text-align: left;
+  background: #1a1a1a;
+}
+.event-hero__banner-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  max-height: 70vh;
+}
+.event-hero__overlay {
+  position: absolute;
+  top: 0; right: 0;
+  width: 45%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: rgba(255, 240, 245, 0.85);
+  backdrop-filter: blur(2px);
+}
+.event-hero__details {
+  text-align: center;
+  max-width: 400px;
+}
+.event-hero__details .event-hero__title {
+  font-family: var(--ff-serif);
+  font-size: 2.2rem;
+  font-weight: 300;
+  color: var(--dark);
+  margin-bottom: 1.5rem;
+  text-shadow: none;
+}
+.event-hero__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+.event-hero__info-item {
+  font-size: 1rem;
+  color: var(--dark);
+  line-height: 1.5;
+}
+.event-hero__info-item a {
+  color: var(--rose);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+.event-hero__info-item a:hover {
+  border-bottom-color: var(--rose);
+}
+.event-hero__details .event-hero__desc {
+  font-size: 0.95rem;
+  color: var(--muted);
+  max-width: 100%;
+  margin: 0;
+  text-shadow: none;
+}
+
+@media (max-width: 768px) {
+  .event-hero--banner {
+    min-height: auto;
+  }
+  .event-hero__banner-img {
+    max-height: 300px;
+    object-position: left center;
+  }
+  .event-hero__overlay {
+    position: relative;
+    width: 100%;
+    height: auto;
+    padding: 2rem 1.5rem;
+    background: rgba(255, 240, 245, 0.95);
+  }
+}
+
 .event-hero {
   background: linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.45)), url('https://shravekjourneyphotos.blob.core.windows.net/photos/IMG_2631.jpg') center/cover no-repeat;
   padding: 6rem 2rem;

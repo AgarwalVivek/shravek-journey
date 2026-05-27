@@ -27,7 +27,12 @@
         if (evt) {
           window._eventId = evt.id;
           document.getElementById('event-title').textContent = evt.name || evt.title || 'Baby Shower';
-          document.getElementById('event-date').textContent = evt.date ? new Date(evt.date + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+          const dateEl = document.getElementById('event-date');
+          if (dateEl) dateEl.textContent = evt.date ? new Date(evt.date + 'T00:00:00').toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) : 'June 7th, 2026';
+          const timeEl = document.getElementById('event-time');
+          if (timeEl && evt.time) timeEl.textContent = evt.time;
+          const addressEl = document.getElementById('event-address');
+          if (addressEl && evt.address) addressEl.textContent = evt.address;
           document.getElementById('event-description').textContent = evt.description || '';
           document.title = (evt.name || evt.title || 'Event') + ' — Shravek Journey';
         }
