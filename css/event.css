@@ -178,4 +178,11 @@
   .rsvp-form .form-row { grid-template-columns: 1fr; }
   .registry-grid { grid-template-columns: 1fr; }
   .event-hero__title { font-size: 2rem; }
+  .event-section { padding: 1.5rem 1rem; }
+  .section-title { font-size: 1.4rem; margin-bottom: 0.3rem; }
+  .section-subtitle { font-size: 0.8rem; margin-bottom: 1.5rem; }
+  .rsvp-form { padding: 1.2rem; }
+  .rsvp-form input { font-size: 0.8rem; padding: 0.5rem 0.6rem; }
+  .rsvp-form label { font-size: 0.65rem; }
+  .rsvp-form .btn { font-size: 0.85rem; padding: 0.6rem; }
 }
