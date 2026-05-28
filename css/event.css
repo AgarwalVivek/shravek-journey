@@ -12,7 +12,7 @@
   align-items: stretch;
 }
 .event-hero__banner-img {
-  width: 55%;
+  width: 50%;
   height: auto;
   display: block;
   object-fit: cover;
@@ -22,7 +22,7 @@
 .event-hero__overlay {
   position: relative;
   top: auto; right: auto;
-  width: 45%;
+  width: 50%;
   height: auto;
   display: flex;
   align-items: center;
@@ -85,7 +85,7 @@
   }
 }
 
-.event-hero {
+.event-hero:not(.event-hero--banner) {
   background: linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.45)), url('https://shravekjourneyphotos.blob.core.windows.net/photos/IMG_2631.jpg') center/cover no-repeat;
   padding: 6rem 2rem;
   text-align: center;
