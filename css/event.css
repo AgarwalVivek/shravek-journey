@@ -15,15 +15,11 @@
 
 @media (max-width: 768px) {
   .event-hero--banner {
-    min-height: 60vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    overflow: visible;
   }
   .event-hero__banner-img {
-    width: auto;
-    height: 60vh;
-    max-width: none;
+    width: 100%;
+    height: auto;
     object-fit: contain;
   }
 }
