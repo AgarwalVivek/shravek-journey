@@ -14,8 +14,15 @@
 }
 
 @media (max-width: 768px) {
+  .event-hero--banner {
+    height: 75vh;
+  }
   .event-hero__banner-img {
-    width: 100%;
+    width: auto;
+    height: 100%;
+    max-width: none;
+    object-fit: cover;
+    object-position: left center;
   }
 }
 
