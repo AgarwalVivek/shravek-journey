@@ -136,13 +136,13 @@
       message: document.getElementById('rsvp-message').value.trim()
     };
 
-    if (!body.name || !body.email) { alert('Please enter your name and email.'); return; }
+    if (!body.name || !body.email) { alert('Please enter your name and email/phone number.'); return; }
 
     // Confirm details before submitting
     const confirmed = confirm(
       `Please confirm your RSVP details:\n\n` +
       `👤 Name: ${body.name}\n` +
-      `📧 Email: ${body.email}\n` +
+      `📧 Email/Phone: ${body.email}\n` +
       `👥 Guests: ${body.guests}\n` +
       (body.message ? `💬 Message: ${body.message}\n` : '') +
       `\nIs this correct?`
