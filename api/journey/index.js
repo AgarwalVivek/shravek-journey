@@ -564,16 +564,17 @@ async function handleCreateRsvp(context, req) {
   const body = req.body || {};
   const container = getContainer();
 
-  // Check if email already has an RSVP for this event (upsert behavior)
-  if (body.email && body.eventId) {
+  // Check if email already has an RSVP (with or without eventId)
+  if (body.email) {
+    const queryStr = body.eventId
+      ? "SELECT * FROM c WHERE c.category = 'rsvp' AND c.email = @email AND c.eventId = @eventId"
+      : "SELECT * FROM c WHERE c.category = 'rsvp' AND c.email = @email";
+    const params = [{ name: "@email", value: body.email }];
+    if (body.eventId) params.push({ name: "@eventId", value: body.eventId });
+
     const { resources } = await container.items
-      .query({
-        query: "SELECT * FROM c WHERE c.category = 'rsvp' AND c.email = @email AND c.eventId = @eventId",
-        parameters: [
-          { name: "@email", value: body.email },
-          { name: "@eventId", value: body.eventId }
-        ]
-      }).fetchAll();
+      .query({ query: queryStr, parameters: params })
+      .fetchAll();
     
     if (resources.length > 0) {
       // Already registered — don't create duplicate, prompt user to update
