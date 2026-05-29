@@ -576,17 +576,12 @@ async function handleCreateRsvp(context, req) {
       }).fetchAll();
     
     if (resources.length > 0) {
-      // Update existing RSVP
+      // Already registered — don't create duplicate, prompt user to update
       const existing = resources[0];
-      existing.name = body.name || existing.name;
-      existing.guests = body.guests || existing.guests;
-      existing.message = body.message !== undefined ? body.message : existing.message;
-      existing.updatedAt = new Date().toISOString();
-      await container.item(existing.id, "rsvp").replace(existing);
       context.res = {
         status: 200,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ success: true, rsvp: existing, updated: true })
+        body: JSON.stringify({ success: false, alreadyRegistered: true, rsvp: existing })
       };
       return;
     }

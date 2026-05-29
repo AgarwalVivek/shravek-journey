@@ -159,7 +159,24 @@
         body: JSON.stringify(body)
       });
       const data = await res.json();
-      if (data.success) {
+      if (data.alreadyRegistered) {
+        // User already registered — show prompt and switch to update mode
+        const rsvp = data.rsvp || {};
+        const lookup = document.getElementById('rsvp-lookup');
+        lookup.innerHTML = `
+          <div style="background:linear-gradient(135deg,#fff3cd,#ffeeba);border:2px solid #ffc107;border-radius:10px;padding:1.25rem 1.5rem;text-align:center">
+            <div style="font-size:1.5rem;margin-bottom:0.5rem">👋 Looks like you're already registered!</div>
+            <p style="font-size:0.9rem;color:#856404;margin:0">You RSVP'd with <strong>${rsvp.guests || 1} guest(s)</strong>. Want to update anything? Edit below and hit Update.</p>
+          </div>
+        `;
+        document.getElementById('rsvp-id').value = rsvp.id || '';
+        document.getElementById('rsvp-name').value = rsvp.name || '';
+        document.getElementById('rsvp-email').value = rsvp.email || '';
+        document.getElementById('rsvp-guests').value = rsvp.guests || 1;
+        document.getElementById('rsvp-message').value = rsvp.message || '';
+        document.getElementById('rsvp-submit-btn').textContent = '✨ Update My RSVP';
+        document.getElementById('rsvp-cancel-btn').style.display = 'inline-block';
+      } else if (data.success) {
         rsvpForm.style.display = 'none';
         document.getElementById('rsvp-lookup').style.display = 'none';
         const successEl = document.getElementById('rsvp-success');
