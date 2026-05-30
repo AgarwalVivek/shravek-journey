@@ -3,6 +3,7 @@ const crypto = require("crypto");
 const { authenticator } = require("otplib");
 const QRCode = require("qrcode");
 const { BlobServiceClient, generateBlobSASQueryParameters, BlobSASPermissions, StorageSharedKeyCredential } = require("@azure/storage-blob");
+const { EmailClient } = require("@azure/communication-email");
 
 let cosmosContainer;
 
@@ -20,6 +21,64 @@ function getContainer() {
     cosmosContainer = client.database(databaseId).container(containerId);
   }
   return cosmosContainer;
+}
+
+// Email helper using Azure Communication Services
+async function sendEmail({ to, subject, htmlBody }) {
+  const connectionString = process.env.ACS_CONNECTION_STRING;
+  const senderAddress = process.env.ACS_SENDER_EMAIL;
+  if (!connectionString || !senderAddress) {
+    console.log("Email not configured (missing ACS_CONNECTION_STRING or ACS_SENDER_EMAIL)");
+    return;
+  }
+  try {
+    const emailClient = new EmailClient(connectionString);
+    await emailClient.beginSend({
+      senderAddress,
+      content: { subject, html: htmlBody },
+      recipients: { to: Array.isArray(to) ? to.map(e => ({ address: e })) : [{ address: to }] }
+    });
+  } catch (err) {
+    console.log("Email send error:", err.message);
+  }
+}
+
+async function sendRsvpEmails(rsvp) {
+  const hostEmail = process.env.HOST_EMAIL;
+  const guestName = rsvp.name || "Guest";
+  const guests = rsvp.guests || 1;
+
+  // Email to guest
+  await sendEmail({
+    to: rsvp.email,
+    subject: "🎉 You're RSVP'd! — Shravek Journey",
+    htmlBody: `
+      <div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:2rem">
+        <h2 style="color:#B45C6E">You're confirmed, ${guestName}! 🎉</h2>
+        <p>Thank you for RSVPing to our baby shower. We're so excited to celebrate with you!</p>
+        <p><strong>Guests:</strong> ${guests}</p>
+        ${rsvp.message ? `<p><strong>Your message:</strong> ${rsvp.message}</p>` : ''}
+        <p style="margin-top:1.5rem;color:#666">If you need to update your RSVP, visit the event page and use the "Already RSVP'd?" lookup.</p>
+        <p style="color:#B45C6E">With love,<br>Vivek & Shraddha 💛</p>
+      </div>`
+  });
+
+  // Email to host
+  if (hostEmail) {
+    await sendEmail({
+      to: hostEmail,
+      subject: `📋 New RSVP: ${guestName} (${guests} guest${guests > 1 ? 's' : ''})`,
+      htmlBody: `
+        <div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:2rem">
+          <h2>New RSVP Received!</h2>
+          <p><strong>Name:</strong> ${guestName}</p>
+          <p><strong>Email:</strong> ${rsvp.email}</p>
+          <p><strong>Guests:</strong> ${guests}</p>
+          ${rsvp.message ? `<p><strong>Message:</strong> ${rsvp.message}</p>` : ''}
+          <p style="color:#666;margin-top:1rem">Received at: ${new Date().toLocaleString()}</p>
+        </div>`
+    });
+  }
 }
 
 module.exports = async function (context, req) {
@@ -598,6 +657,9 @@ async function handleCreateRsvp(context, req) {
   };
 
   await container.items.create(rsvp);
+
+  // Send confirmation emails (non-blocking)
+  sendRsvpEmails(rsvp).catch(err => console.log("Email error:", err.message));
 
   context.res = {
     status: 200,
