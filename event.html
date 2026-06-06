@@ -39,8 +39,40 @@
       <div style="text-align:center;max-width:500px;margin:0 auto 1.5rem;padding:1rem 1.25rem;background:#fff9fb;border:1px solid #f5e0e8;border-radius:8px">
         <p style="margin:0 0 0.4rem;font-size:0.9rem;color:var(--dark)">📅 <strong>7th June, 2026</strong> &nbsp;•&nbsp; 🕐 <strong>11:00 AM – 1:30 PM</strong></p>
         <p style="margin:0 0 0.5rem;font-size:0.85rem;color:var(--dark)">📍 <a href="https://maps.google.com/?q=Rajgharana+Restaurant+6130+E+Lake+Sammamish+Pkwy+SE+STE+A+Issaquah+WA+98029" target="_blank" rel="noopener" style="color:var(--rose);text-decoration:none;border-bottom:1px dashed var(--rose)">Rajgharana Restaurant, 6130 E Lake Sammamish Pkwy SE, STE A, Issaquah, WA 98029</a></p>
-        <p style="margin:0;font-size:0.8rem;color:#991b1b;font-weight:500">⏰ Please RSVP by June 2nd, 2026</p>
       </div>
+
+      <!-- Countdown Timer -->
+      <div id="countdown-container" style="text-align:center;max-width:500px;margin:0 auto 1.5rem;padding:1rem 1.25rem;background:linear-gradient(135deg,#fff0f5,#fdf2f8);border:1px solid #f5e0e8;border-radius:8px">
+        <p style="margin:0 0 0.5rem;font-size:0.85rem;color:var(--muted);font-weight:500">🎉 The celebration begins in...</p>
+        <div id="countdown-timer" style="display:flex;justify-content:center;gap:1rem;flex-wrap:wrap">
+          <div style="text-align:center"><span id="cd-hours" style="font-size:1.8rem;font-weight:600;color:var(--rose)">--</span><br><span style="font-size:0.7rem;color:var(--muted)">HOURS</span></div>
+          <div style="text-align:center"><span id="cd-minutes" style="font-size:1.8rem;font-weight:600;color:var(--rose)">--</span><br><span style="font-size:0.7rem;color:var(--muted)">MINUTES</span></div>
+          <div style="text-align:center"><span id="cd-seconds" style="font-size:1.8rem;font-weight:600;color:var(--rose)">--</span><br><span style="font-size:0.7rem;color:var(--muted)">SECONDS</span></div>
+        </div>
+      </div>
+      <script>
+      (function() {
+        // June 7, 2026 at 11:00 AM Pacific (PDT = UTC-7)
+        var eventTime = new Date('2026-06-07T11:00:00-07:00').getTime();
+        var container = document.getElementById('countdown-container');
+        function update() {
+          var now = Date.now();
+          var diff = eventTime - now;
+          if (diff <= 0) {
+            container.style.display = 'none';
+            return;
+          }
+          var hours = Math.floor(diff / 3600000);
+          var minutes = Math.floor((diff % 3600000) / 60000);
+          var seconds = Math.floor((diff % 60000) / 1000);
+          document.getElementById('cd-hours').textContent = String(hours).padStart(2, '0');
+          document.getElementById('cd-minutes').textContent = String(minutes).padStart(2, '0');
+          document.getElementById('cd-seconds').textContent = String(seconds).padStart(2, '0');
+          requestAnimationFrame(function() { setTimeout(update, 1000); });
+        }
+        update();
+      })();
+      </script>
 
       <form class="rsvp-form" id="rsvp-form">
         <input type="hidden" id="rsvp-id" />
