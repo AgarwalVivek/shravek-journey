@@ -42,28 +42,82 @@ const JOURNEY_DATA = {
   // ── Travel adventures ──────────────────────────────────
   travel: [
     {
-      icon: '🏔️',
-      destination: 'Manali',
-      date: 'Dec 2021',
-      description: 'Snow-capped mountains and cozy evenings by the fire.'
+      icon: '🏙️',
+      destination: 'Chicago & Naperville',
+      date: 'Illinois',
+      description: 'Deep-dish pizza, the magnificent mile, and suburban charm in Naperville.'
     },
     {
-      icon: '🏖️',
-      destination: 'Goa',
-      date: 'Mar 2022',
-      description: 'Sun, sand, and sunsets — our first beach trip together.'
+      icon: '🐎',
+      destination: 'Louisville',
+      date: 'Kentucky',
+      description: 'Bourbon country, southern hospitality, and the spirit of the Derby.'
     },
     {
-      icon: '🕌',
-      destination: 'Rajasthan',
-      date: 'Oct 2022',
-      description: 'Forts, palaces, and the colors of the desert.'
+      icon: '🍑',
+      destination: 'Alpharetta',
+      date: 'Atlanta, Georgia',
+      description: 'Southern warmth, great food, and the peach state vibes.'
+    },
+    {
+      icon: '🎷',
+      destination: 'New Orleans',
+      date: 'Louisiana',
+      description: 'Jazz, beignets, and the magic of the French Quarter.'
     },
     {
       icon: '🌴',
-      destination: 'Kerala',
-      date: 'Feb 2023',
-      description: 'Backwaters, spices, and the most peaceful houseboats.'
+      destination: 'Florida',
+      date: 'Florida',
+      description: 'Sunshine, beaches, and the tropical life.'
+    },
+    {
+      icon: '💻',
+      destination: 'San Jose & San Francisco',
+      date: 'California',
+      description: 'Tech capital, the Golden Gate, and Bay Area adventures.'
+    },
+    {
+      icon: '🎬',
+      destination: 'Los Angeles',
+      date: 'California',
+      description: 'Hollywood, sunsets on the Pacific, and the City of Angels.'
+    },
+    {
+      icon: '🎰',
+      destination: 'Las Vegas',
+      date: 'Nevada',
+      description: 'The Strip, desert nights, and unforgettable entertainment.'
+    },
+    {
+      icon: '🏜️',
+      destination: 'Grand Canyon',
+      date: 'Arizona',
+      description: 'Breathtaking views — one of nature\'s greatest masterpieces.'
+    },
+    {
+      icon: '⛰️',
+      destination: 'Denver',
+      date: 'Colorado',
+      description: 'Mile-high city, Rocky Mountain views, and crisp mountain air.'
+    },
+    {
+      icon: '🗽',
+      destination: 'New York City',
+      date: 'New York',
+      description: 'The city that never sleeps — Times Square, Central Park, and endless energy.'
+    },
+    {
+      icon: '🤠',
+      destination: 'Texas',
+      date: 'Texas',
+      description: 'Everything\'s bigger in Texas — BBQ, wide-open skies, and southern charm.'
+    },
+    {
+      icon: '🌲',
+      destination: 'Portland',
+      date: 'Oregon',
+      description: 'Craft coffee, lush greenery, and the Pacific Northwest spirit.'
     }
   ],
 

@@ -102,24 +102,27 @@ function renderTravel() {
     return;
   }
 
-  container.innerHTML = items.map(trip => {
-    const albumLink = trip.album ? `<a href="album.html?album=${encodeURIComponent(trip.album)}" class="btn btn--dark travel-card__photos">View Photos →</a>` : '';
-    return `
-    <div class="travel-card">
-      <div class="travel-card__img">
-        ${trip.photoUrl
-          ? `<img src="${trip.photoUrl}" alt="${trip.destination}" style="width:100%;height:100%;object-fit:cover" />`
-          : (trip.icon || '✈️')
-        }
-      </div>
-      <div class="travel-card__body">
-        <h3 class="travel-card__name">${trip.destination || trip.title || ''}</h3>
-        <p class="travel-card__date">${trip.date || ''}</p>
-        <p class="travel-card__desc">${trip.description || ''}</p>
-        ${albumLink}
-      </div>
-    </div>`;
-  }).join('');
+  container.innerHTML = `
+    <div class="travel-map-header">
+      <div class="travel-stamp">✈️ ${items.length} Destinations</div>
+      <p class="travel-subtitle">Pin by pin, we're mapping our story across the States</p>
+    </div>
+    <div class="travel-pins">
+      ${items.map((trip, i) => {
+        const albumLink = trip.album ? `<a href="album.html?album=${encodeURIComponent(trip.album)}" class="travel-pin__photos">View Photos →</a>` : '';
+        return `
+        <div class="travel-pin" style="animation-delay: ${i * 0.08}s">
+          <div class="travel-pin__icon">${trip.icon || '📍'}</div>
+          <div class="travel-pin__content">
+            <h3 class="travel-pin__name">${trip.destination || trip.title || ''}</h3>
+            <span class="travel-pin__state">${trip.date || ''}</span>
+            <p class="travel-pin__desc">${trip.description || ''}</p>
+            ${albumLink}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
 }
 
 // ── Render Baby Journey ──────────────────────────────────
