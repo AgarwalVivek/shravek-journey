@@ -20,9 +20,7 @@ async function loadJourneyData() {
     const result = await res.json();
     if (result.success && result.data) {
       journeyData = result.data;
-      // Always use local static travel data (most up-to-date)
-      journeyData.travel = JOURNEY_DATA.travel;
-      console.log('✓ Loaded data from Cosmos DB (travel from local)');
+      console.log('✓ Loaded data from Cosmos DB');
     } else {
       throw new Error('API returned no data');
     }
