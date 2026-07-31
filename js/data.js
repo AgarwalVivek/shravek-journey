@@ -118,6 +118,24 @@ const JOURNEY_DATA = {
       destination: 'Portland',
       date: 'Oregon',
       description: 'Craft coffee, lush greenery, and the Pacific Northwest spirit.'
+    },
+    {
+      icon: '🧀',
+      destination: 'Wisconsin',
+      date: 'Wisconsin',
+      description: 'Cheese country, lakeside charm, and Midwest warmth.'
+    },
+    {
+      icon: '🌊',
+      destination: 'Michigan',
+      date: 'Michigan',
+      description: 'Great Lakes, stunning dunes, and beautiful fall colors.'
+    },
+    {
+      icon: '🇮🇳',
+      destination: 'India',
+      date: 'India',
+      description: 'Back to our roots — family, festivals, and the flavors of home.'
     }
   ],
 
