@@ -664,4 +664,59 @@ body.revealed .hero__tagline {
   .section--dark, .section--ivory { padding: 4rem 1.5rem; }
   .travel-grid { grid-template-columns: 1fr; }
   .baby-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  .page-nav { flex-direction: column; gap: 0.75rem; }
+  .page-nav__btn { width: 100%; text-align: center; }
+}
+
+/* ── PAGE SECTION NAVIGATION ────────────────────────────── */
+.page-section {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.page-section--hidden {
+  display: none !important;
+}
+.page-section.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+.page-nav {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 4rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+}
+.page-nav__btn {
+  min-width: 180px;
+}
+.btn--outline-light {
+  background: transparent;
+  color: var(--teal);
+  border: 1.5px solid var(--teal);
+  border-radius: 30px;
+  padding: 0.85rem 2rem;
+  font-family: var(--ff-sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.btn--outline-light:hover {
+  background: var(--teal);
+  color: var(--white);
+}
+.section--dark .btn--outline-light {
+  color: var(--teal-lt);
+  border-color: var(--teal-lt);
+}
+.section--dark .btn--outline-light:hover {
+  background: var(--teal-lt);
+  color: var(--dark);
+}
+.section--dark .page-nav {
+  border-top-color: rgba(255,255,255,0.1);
 }
