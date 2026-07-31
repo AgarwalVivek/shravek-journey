@@ -53,7 +53,13 @@
       width: 100%;
       height: 260px;
       object-fit: cover;
+      object-position: top center;
       display: block;
+      background: #f0ebe3;
+      transition: opacity 0.3s ease;
+    }
+    .album-grid__item img[data-loaded="false"] {
+      opacity: 0;
     }
     .album-grid__caption {
       padding: 0.75rem 1rem;
@@ -90,8 +96,14 @@
     const params = new URLSearchParams(window.location.search);
     const albumName = params.get('album') || '';
 
-    document.getElementById('album-title').textContent = albumName ? albumName.charAt(0).toUpperCase() + albumName.slice(1) + ' Photos' : 'Album';
-    document.title = (albumName || 'Album') + ' — Shravek Journey';
+    // Format album title nicely (e.g. "wedding-usa" → "Wedding USA Photos")
+    function formatAlbumTitle(name) {
+      if (!name) return 'Album';
+      return name.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') + ' Photos';
+    }
+
+    document.getElementById('album-title').textContent = formatAlbumTitle(albumName);
+    document.title = (formatAlbumTitle(albumName) || 'Album') + ' — Shravek Journey';
 
     async function loadAlbum() {
       let photos = [];
@@ -121,16 +133,22 @@
 
       grid.innerHTML = photos.map(photo => {
         const isVideo = photo.type === 'video' || (photo.url && /\.(mov|mp4|webm|ogg)$/i.test(photo.url));
+        
+        // Hide captions that just repeat the album name
+        const albumWords = albumName.replace(/-/g, ' ').toLowerCase();
+        const caption = photo.caption && photo.caption.toLowerCase().replace(/-/g, ' ') !== albumWords
+          ? photo.caption : '';
+
         const media = !photo.url
           ? `<div style="height:260px;display:flex;align-items:center;justify-content:center;font-size:4rem;background:#f9f7f4">${photo.emoji || '📷'}</div>`
           : isVideo
             ? `<video src="${photo.url}" controls playsinline preload="metadata"></video>`
-            : `<img src="${photo.url}" alt="${photo.caption || ''}" loading="lazy" />`;
+            : `<img src="${photo.url}" alt="${caption || ''}" loading="lazy" data-loaded="false" onload="this.dataset.loaded='true'" />`;
 
         return `
           <div class="album-grid__item">
             ${media}
-            ${photo.caption ? `<div class="album-grid__caption">${photo.caption}</div>` : ''}
+            ${caption ? `<div class="album-grid__caption">${caption}</div>` : ''}
           </div>`;
       }).join('');
     }
