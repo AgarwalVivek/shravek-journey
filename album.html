@@ -13,7 +13,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
   <style>
     .album-hero {
-      padding: 4rem 2rem 2rem;
+      padding: 2rem 1rem 1rem;
       text-align: center;
       background: var(--ivory, #faf8f5);
     }
@@ -34,7 +34,7 @@
     }
     .album-slider {
       width: min(1100px, calc(100% - 2rem));
-      margin: 2rem auto 4rem;
+      margin: 1rem auto 3rem;
     }
     .album-slider__viewport {
       position: relative;
@@ -53,12 +53,12 @@
       min-width: 0;
       display: grid;
       place-items: center;
-      height: min(70vh, 720px);
-      min-height: 420px;
+      height: min(calc(100svh - 270px), 720px);
+      min-height: 300px;
       background: #eee8df;
       opacity: 0;
       visibility: hidden;
-      transition: opacity 1.1s ease, visibility 0s linear 1.1s;
+      transition: opacity 0.8s ease, visibility 0s linear 0.8s;
     }
     .album-slide--active {
       z-index: 1;
@@ -68,8 +68,10 @@
     }
     .album-slide img,
     .album-slide video {
-      width: 100%;
-      height: 100%;
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 100%;
       object-fit: contain;
       object-position: center;
       display: block;
@@ -163,12 +165,12 @@
       font-size: 1.1rem;
     }
     @media (max-width: 640px) {
-      .album-hero { padding: 2.5rem 1rem 1rem; }
+      .album-hero { padding: 1.5rem 1rem 0.75rem; }
       .album-hero__title { font-size: 2rem; }
-      .album-slider { margin-top: 1rem; }
+      .album-slider { margin: 0.75rem auto 2rem; }
       .album-slide {
-        height: 62vh;
-        min-height: 360px;
+        height: calc(100svh - 250px);
+        min-height: 280px;
       }
       .album-slider__arrow {
         width: 42px;
@@ -246,9 +248,11 @@
         </div>
         <div class="album-slider__controls">
           <button class="album-slider__button" type="button" id="autoplay-toggle">Pause</button>
+          <button class="album-slider__button" type="button" id="music-toggle">Play music</button>
           <a class="album-slider__download" id="download-media" href="#" download>Download photo</a>
           <label for="autoplay-speed">Change photo every</label>
           <select class="album-slider__select" id="autoplay-speed">
+            <option value="1000">1 second</option>
             <option value="5000">5 seconds</option>
             <option value="10000">10 seconds</option>
             <option value="15000">15 seconds</option>
@@ -300,12 +304,16 @@
       });
 
       let currentIndex = 0;
-      let autoplayDelay = 5000;
+      let autoplayDelay = 1000;
       let autoplayTimer;
       let isPlaying = true;
       let touchStartX = 0;
+      let audioContext;
+      let musicTimer;
+      let musicPlaying = false;
       const counter = slider.querySelector('.album-slider__counter');
       const toggle = slider.querySelector('#autoplay-toggle');
+      const musicToggle = slider.querySelector('#music-toggle');
       const speed = slider.querySelector('#autoplay-speed');
       const download = slider.querySelector('#download-media');
       const viewport = slider.querySelector('.album-slider__viewport');
@@ -360,6 +368,64 @@
         autoplayDelay = Number(speed.value);
         startAutoplay();
       });
+
+      const melody = [
+        261.63, 329.63, 392.00, 329.63,
+        196.00, 246.94, 293.66, 246.94,
+        220.00, 261.63, 329.63, 261.63,
+        174.61, 220.00, 261.63, 220.00
+      ];
+      const musicLoopDuration = melody.length * 0.5;
+
+      function scheduleMusicLoop() {
+        const loopStart = audioContext.currentTime + 0.05;
+        melody.forEach((frequency, index) => {
+          const noteStart = loopStart + index * 0.5;
+          const oscillator = audioContext.createOscillator();
+          const gain = audioContext.createGain();
+          oscillator.type = index % 4 === 0 ? 'triangle' : 'sine';
+          oscillator.frequency.value = frequency;
+          gain.gain.setValueAtTime(0.0001, noteStart);
+          gain.gain.exponentialRampToValueAtTime(0.055, noteStart + 0.04);
+          gain.gain.exponentialRampToValueAtTime(0.0001, noteStart + 0.7);
+          oscillator.connect(gain);
+          gain.connect(audioContext.destination);
+          oscillator.start(noteStart);
+          oscillator.stop(noteStart + 0.72);
+        });
+      }
+
+      async function startMusic() {
+        if (musicPlaying) return;
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        await audioContext.resume();
+        musicPlaying = true;
+        musicToggle.textContent = 'Stop music';
+        scheduleMusicLoop();
+        musicTimer = setInterval(scheduleMusicLoop, musicLoopDuration * 1000);
+      }
+
+      async function stopMusic() {
+        if (!musicPlaying) return;
+        clearInterval(musicTimer);
+        musicPlaying = false;
+        musicToggle.textContent = 'Play music';
+        await audioContext.close();
+        audioContext = null;
+      }
+
+      musicToggle.addEventListener('click', () => {
+        if (musicPlaying) {
+          stopMusic();
+        } else {
+          startMusic();
+        }
+      });
+
+      // Browsers allow background audio only after the visitor interacts with the page.
+      document.addEventListener('pointerdown', event => {
+        if (!event.target.closest('#music-toggle')) startMusic();
+      }, { once: true });
 
       viewport.addEventListener('mouseenter', () => clearInterval(autoplayTimer));
       viewport.addEventListener('mouseleave', startAutoplay);
