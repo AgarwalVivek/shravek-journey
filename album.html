@@ -280,7 +280,7 @@
           const image = document.createElement('img');
           image.src = photo.url;
           image.alt = caption || `Album photo ${index + 1}`;
-          image.loading = index === 0 ? 'eager' : 'lazy';
+          image.loading = index < 2 ? 'eager' : 'lazy';
           slide.appendChild(image);
         }
 
@@ -298,6 +298,7 @@
       let autoplayDelay = 1000;
       let autoplayTimer;
       let isPlaying = true;
+      let isTransitioning = false;
       let touchStartX = 0;
       let audioContext;
       let musicTimer;
@@ -309,8 +310,46 @@
       const download = slider.querySelector('#download-media');
       const viewport = slider.querySelector('.album-slider__viewport');
 
-      function showSlide(index) {
-        currentIndex = (index + photos.length) % photos.length;
+      function waitForSlide(index) {
+        const slide = track.children[index];
+        const image = slide.querySelector('img');
+        if (image) {
+          image.loading = 'eager';
+          if (image.complete) return Promise.resolve(image.naturalWidth > 0);
+          return new Promise(resolve => {
+            image.addEventListener('load', () => resolve(true), { once: true });
+            image.addEventListener('error', () => resolve(false), { once: true });
+          });
+        }
+
+        const video = slide.querySelector('video');
+        if (video) {
+          if (video.readyState >= 1) return Promise.resolve(true);
+          video.preload = 'metadata';
+          video.load();
+          return new Promise(resolve => {
+            video.addEventListener('loadedmetadata', () => resolve(true), { once: true });
+            video.addEventListener('error', () => resolve(false), { once: true });
+          });
+        }
+
+        return Promise.resolve(true);
+      }
+
+      function preloadFollowingSlide() {
+        const nextIndex = (currentIndex + 1) % photos.length;
+        const nextSlide = track.children[nextIndex];
+        const image = nextSlide.querySelector('img');
+        const video = nextSlide.querySelector('video');
+        if (image) image.loading = 'eager';
+        if (video) video.preload = 'metadata';
+      }
+
+      async function showSlide(index) {
+        const targetIndex = (index + photos.length) % photos.length;
+        if (!await waitForSlide(targetIndex)) return false;
+
+        currentIndex = targetIndex;
         Array.from(track.children).forEach((slide, slideIndex) => {
           slide.classList.toggle('album-slide--active', slideIndex === currentIndex);
         });
@@ -331,18 +370,30 @@
         track.querySelectorAll('video').forEach(video => {
           if (!track.children[currentIndex].contains(video)) video.pause();
         });
+
+        preloadFollowingSlide();
+        return true;
       }
 
       function startAutoplay() {
-        clearInterval(autoplayTimer);
+        clearTimeout(autoplayTimer);
         if (isPlaying && photos.length > 1) {
-          autoplayTimer = setInterval(() => showSlide(currentIndex + 1), autoplayDelay);
+          autoplayTimer = setTimeout(() => move(1), autoplayDelay);
         }
       }
 
-      function move(direction) {
-        showSlide(currentIndex + direction);
-        startAutoplay();
+      async function move(direction) {
+        if (isTransitioning) return;
+        isTransitioning = true;
+        clearTimeout(autoplayTimer);
+        try {
+          for (let offset = 1; offset < photos.length; offset++) {
+            if (await showSlide(currentIndex + direction * offset)) break;
+          }
+        } finally {
+          isTransitioning = false;
+          startAutoplay();
+        }
       }
 
       slider.querySelector('.album-slider__arrow--previous').addEventListener('click', () => move(-1));
@@ -432,7 +483,7 @@
       });
 
       track.querySelectorAll('video').forEach(video => {
-        video.addEventListener('play', () => clearInterval(autoplayTimer));
+        video.addEventListener('play', () => clearTimeout(autoplayTimer));
         video.addEventListener('pause', startAutoplay);
       });
 
@@ -442,7 +493,7 @@
         });
       }
 
-      showSlide(0);
+      await showSlide(0);
       startAutoplay();
     }
 
