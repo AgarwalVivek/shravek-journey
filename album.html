@@ -53,8 +53,7 @@
       min-width: 0;
       display: grid;
       place-items: center;
-      height: min(calc(100svh - 270px), 720px);
-      min-height: 300px;
+      align-self: start;
       background: #eee8df;
       opacity: 0;
       visibility: hidden;
@@ -68,12 +67,8 @@
     }
     .album-slide img,
     .album-slide video {
-      width: auto;
+      width: 100%;
       height: auto;
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-      object-position: center;
       display: block;
     }
     .album-slide__placeholder {
@@ -168,10 +163,6 @@
       .album-hero { padding: 1.5rem 1rem 0.75rem; }
       .album-hero__title { font-size: 2rem; }
       .album-slider { margin: 0.75rem auto 2rem; }
-      .album-slide {
-        height: calc(100svh - 250px);
-        min-height: 280px;
-      }
       .album-slider__arrow {
         width: 42px;
         height: 42px;
@@ -427,8 +418,6 @@
         if (!event.target.closest('#music-toggle')) startMusic();
       }, { once: true });
 
-      viewport.addEventListener('mouseenter', () => clearInterval(autoplayTimer));
-      viewport.addEventListener('mouseleave', startAutoplay);
       viewport.addEventListener('touchstart', event => {
         touchStartX = event.changedTouches[0].clientX;
       }, { passive: true });
