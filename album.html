@@ -32,39 +32,111 @@
       color: var(--dark, #222);
       text-transform: capitalize;
     }
-    .album-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 1.5rem;
-      padding: 2rem;
-      max-width: 1200px;
-      margin: 0 auto;
+    .album-slider {
+      width: min(1100px, calc(100% - 2rem));
+      margin: 2rem auto 4rem;
     }
-    .album-grid__item {
-      border-radius: 8px;
+    .album-slider__viewport {
+      position: relative;
       overflow: hidden;
-      background: #fff;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-      transition: transform 0.2s;
+      border-radius: 14px;
+      background: #eee8df;
+      box-shadow: 0 12px 35px rgba(55, 45, 35, 0.14);
+      touch-action: pan-y;
     }
-    .album-grid__item:hover { transform: translateY(-3px); }
-    .album-grid__item img,
-    .album-grid__item video {
+    .album-slider__track {
+      display: flex;
+      transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: transform;
+    }
+    .album-slide {
+      position: relative;
+      flex: 0 0 100%;
+      min-width: 0;
+      display: grid;
+      place-items: center;
+      height: min(70vh, 720px);
+      min-height: 420px;
+      background: #eee8df;
+    }
+    .album-slide img,
+    .album-slide video {
       width: 100%;
-      height: 260px;
-      object-fit: cover;
-      object-position: top center;
+      height: 100%;
+      object-fit: contain;
       display: block;
-      background: #f0ebe3;
-      transition: opacity 0.3s ease;
     }
-    .album-grid__item img[data-loaded="false"] {
-      opacity: 0;
+    .album-slide__placeholder {
+      font-size: 5rem;
     }
-    .album-grid__caption {
-      padding: 0.75rem 1rem;
-      font-size: 0.85rem;
+    .album-slide__caption {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      padding: 2.5rem 1rem 1rem;
+      color: #fff;
+      text-align: center;
+      background: linear-gradient(transparent, rgba(0, 0, 0, 0.65));
+    }
+    .album-slider__arrow {
+      position: absolute;
+      z-index: 2;
+      top: 50%;
+      width: 48px;
+      height: 48px;
+      border: 0;
+      border-radius: 50%;
+      color: #222;
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+      font-size: 1.8rem;
+      line-height: 1;
+      cursor: pointer;
+      transform: translateY(-50%);
+      transition: background 0.2s, transform 0.2s;
+    }
+    .album-slider__arrow:hover {
+      background: #fff;
+      transform: translateY(-50%) scale(1.06);
+    }
+    .album-slider__arrow:focus-visible,
+    .album-slider__button:focus-visible,
+    .album-slider__select:focus-visible {
+      outline: 2px solid #7e6651;
+      outline-offset: 3px;
+    }
+    .album-slider__arrow--previous { left: 1rem; }
+    .album-slider__arrow--next { right: 1rem; }
+    .album-slider__controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem 1rem;
+      padding-top: 1.25rem;
       color: var(--muted, #666);
+      font-size: 0.9rem;
+    }
+    .album-slider__button,
+    .album-slider__select {
+      min-height: 38px;
+      border: 1px solid #d7cec3;
+      border-radius: 999px;
+      color: var(--dark, #222);
+      background: #fff;
+      font: inherit;
+      cursor: pointer;
+    }
+    .album-slider__button {
+      min-width: 92px;
+      padding: 0.45rem 1rem;
+    }
+    .album-slider__select {
+      padding: 0.45rem 2.2rem 0.45rem 0.9rem;
+    }
+    .album-slider__counter {
+      min-width: 72px;
       text-align: center;
     }
     .album-empty {
@@ -72,6 +144,24 @@
       padding: 4rem 2rem;
       color: var(--muted, #888);
       font-size: 1.1rem;
+    }
+    @media (max-width: 640px) {
+      .album-hero { padding: 2.5rem 1rem 1rem; }
+      .album-hero__title { font-size: 2rem; }
+      .album-slider { margin-top: 1rem; }
+      .album-slide {
+        height: 62vh;
+        min-height: 360px;
+      }
+      .album-slider__arrow {
+        width: 42px;
+        height: 42px;
+      }
+      .album-slider__arrow--previous { left: 0.6rem; }
+      .album-slider__arrow--next { right: 0.6rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .album-slider__track { transition: none; }
     }
   </style>
 </head>
@@ -82,9 +172,9 @@
     <h1 class="album-hero__title" id="album-title">Album</h1>
   </section>
 
-  <div class="album-grid" id="album-grid">
+  <main class="album-slider" id="album-slider">
     <p class="album-empty">Loading photos...</p>
-  </div>
+  </main>
 
   <footer class="footer">
     <div class="footer__logo">Shravek</div>
@@ -124,33 +214,148 @@
         if (filtered.length > 0) photos = filtered;
       }
 
-      const grid = document.getElementById('album-grid');
+      const slider = document.getElementById('album-slider');
 
       if (photos.length === 0) {
-        grid.innerHTML = '<p class="album-empty">No photos in this album yet.</p>';
+        slider.innerHTML = '<p class="album-empty">No photos in this album yet.</p>';
         return;
       }
 
-      grid.innerHTML = photos.map(photo => {
+      slider.innerHTML = `
+        <div class="album-slider__viewport">
+          <div class="album-slider__track"></div>
+          <button class="album-slider__arrow album-slider__arrow--previous" type="button" aria-label="Previous photo">‹</button>
+          <button class="album-slider__arrow album-slider__arrow--next" type="button" aria-label="Next photo">›</button>
+        </div>
+        <div class="album-slider__controls">
+          <button class="album-slider__button" type="button" id="autoplay-toggle">Pause</button>
+          <label for="autoplay-speed">Change photo every</label>
+          <select class="album-slider__select" id="autoplay-speed">
+            <option value="5000">5 seconds</option>
+            <option value="10000">10 seconds</option>
+            <option value="15000">15 seconds</option>
+          </select>
+          <span class="album-slider__counter" aria-live="polite"></span>
+        </div>`;
+
+      const track = slider.querySelector('.album-slider__track');
+      photos.forEach((photo, index) => {
         const isVideo = photo.type === 'video' || (photo.url && /\.(mov|mp4|webm|ogg)$/i.test(photo.url));
-        
+
         // Hide captions that just repeat the album name
         const albumWords = albumName.replace(/-/g, ' ').toLowerCase();
         const caption = photo.caption && photo.caption.toLowerCase().replace(/-/g, ' ') !== albumWords
           ? photo.caption : '';
 
-        const media = !photo.url
-          ? `<div style="height:260px;display:flex;align-items:center;justify-content:center;font-size:4rem;background:#f9f7f4">${photo.emoji || '📷'}</div>`
-          : isVideo
-            ? `<video src="${photo.url}" controls playsinline preload="metadata"></video>`
-            : `<img src="${photo.url}" alt="${caption || ''}" loading="lazy" data-loaded="false" onload="this.dataset.loaded='true'" />`;
+        const slide = document.createElement('article');
+        slide.className = 'album-slide';
+        slide.setAttribute('aria-label', `Photo ${index + 1} of ${photos.length}`);
 
-        return `
-          <div class="album-grid__item">
-            ${media}
-            ${caption ? `<div class="album-grid__caption">${caption}</div>` : ''}
-          </div>`;
-      }).join('');
+        if (!photo.url) {
+          const placeholder = document.createElement('div');
+          placeholder.className = 'album-slide__placeholder';
+          placeholder.textContent = photo.emoji || '📷';
+          slide.appendChild(placeholder);
+        } else if (isVideo) {
+          const video = document.createElement('video');
+          video.src = photo.url;
+          video.controls = true;
+          video.playsInline = true;
+          video.preload = index === 0 ? 'metadata' : 'none';
+          slide.appendChild(video);
+        } else {
+          const image = document.createElement('img');
+          image.src = photo.url;
+          image.alt = caption || `Album photo ${index + 1}`;
+          image.loading = index === 0 ? 'eager' : 'lazy';
+          slide.appendChild(image);
+        }
+
+        if (caption) {
+          const captionElement = document.createElement('div');
+          captionElement.className = 'album-slide__caption';
+          captionElement.textContent = caption;
+          slide.appendChild(captionElement);
+        }
+
+        track.appendChild(slide);
+      });
+
+      let currentIndex = 0;
+      let autoplayDelay = 5000;
+      let autoplayTimer;
+      let isPlaying = true;
+      let touchStartX = 0;
+      const counter = slider.querySelector('.album-slider__counter');
+      const toggle = slider.querySelector('#autoplay-toggle');
+      const speed = slider.querySelector('#autoplay-speed');
+      const viewport = slider.querySelector('.album-slider__viewport');
+
+      function showSlide(index) {
+        currentIndex = (index + photos.length) % photos.length;
+        track.style.transform = `translateX(-${currentIndex * 100}%)`;
+        counter.textContent = `${currentIndex + 1} / ${photos.length}`;
+
+        track.querySelectorAll('video').forEach(video => {
+          if (!track.children[currentIndex].contains(video)) video.pause();
+        });
+      }
+
+      function startAutoplay() {
+        clearInterval(autoplayTimer);
+        if (isPlaying && photos.length > 1) {
+          autoplayTimer = setInterval(() => showSlide(currentIndex + 1), autoplayDelay);
+        }
+      }
+
+      function move(direction) {
+        showSlide(currentIndex + direction);
+        startAutoplay();
+      }
+
+      slider.querySelector('.album-slider__arrow--previous').addEventListener('click', () => move(-1));
+      slider.querySelector('.album-slider__arrow--next').addEventListener('click', () => move(1));
+
+      toggle.addEventListener('click', () => {
+        isPlaying = !isPlaying;
+        toggle.textContent = isPlaying ? 'Pause' : 'Play';
+        toggle.setAttribute('aria-label', isPlaying ? 'Pause slideshow' : 'Play slideshow');
+        startAutoplay();
+      });
+
+      speed.addEventListener('change', () => {
+        autoplayDelay = Number(speed.value);
+        startAutoplay();
+      });
+
+      viewport.addEventListener('mouseenter', () => clearInterval(autoplayTimer));
+      viewport.addEventListener('mouseleave', startAutoplay);
+      viewport.addEventListener('touchstart', event => {
+        touchStartX = event.changedTouches[0].clientX;
+      }, { passive: true });
+      viewport.addEventListener('touchend', event => {
+        const distance = event.changedTouches[0].clientX - touchStartX;
+        if (Math.abs(distance) > 50) move(distance > 0 ? -1 : 1);
+      }, { passive: true });
+
+      document.addEventListener('keydown', event => {
+        if (event.key === 'ArrowLeft') move(-1);
+        if (event.key === 'ArrowRight') move(1);
+      });
+
+      track.querySelectorAll('video').forEach(video => {
+        video.addEventListener('play', () => clearInterval(autoplayTimer));
+        video.addEventListener('pause', startAutoplay);
+      });
+
+      if (photos.length === 1) {
+        slider.querySelectorAll('.album-slider__arrow, #autoplay-toggle, #autoplay-speed').forEach(element => {
+          element.disabled = true;
+        });
+      }
+
+      showSlide(0);
+      startAutoplay();
     }
 
     loadAlbum();
