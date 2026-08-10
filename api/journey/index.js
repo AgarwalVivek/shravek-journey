@@ -193,6 +193,10 @@ module.exports = async function (context, req) {
         if (req.method === "GET") return await handleListBlobPhotos(context, req);
         break;
 
+      case "download":
+        if (req.method === "GET") return await handleDownload(context, req);
+        break;
+
       case "all":
         return await handleGetAll(context);
 
@@ -1061,6 +1065,57 @@ async function handleGetUploadUrl(context, req) {
     status: 200,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ success: true, uploadUrl, blobUrl })
+  };
+}
+
+async function handleDownload(context, req) {
+  const sourceUrl = req.query && req.query.url;
+  if (!sourceUrl) {
+    context.res = { status: 400, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: "Photo URL is required." }) };
+    return;
+  }
+
+  const connStr = process.env.STORAGE_CONNECTION_STRING;
+  if (!connStr) {
+    context.res = { status: 500, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: "Storage not configured." }) };
+    return;
+  }
+
+  const parts = {};
+  connStr.split(";").forEach(part => {
+    const [key, ...vals] = part.split("=");
+    parts[key] = vals.join("=");
+  });
+
+  const accountName = parts["AccountName"];
+  const accountKey = parts["AccountKey"];
+  const url = new URL(sourceUrl);
+  const containerPrefix = "/photos/";
+  if (url.protocol !== "https:" || url.hostname.toLowerCase() !== `${accountName}.blob.core.windows.net`.toLowerCase() || !url.pathname.startsWith(containerPrefix)) {
+    context.res = { status: 400, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: "Invalid photo URL." }) };
+    return;
+  }
+
+  const blobName = decodeURIComponent(url.pathname.slice(containerPrefix.length));
+  const fileName = (blobName.split("/").pop() || "album-photo").replace(/[^a-zA-Z0-9._-]/g, "_");
+  const startsOn = new Date();
+  const expiresOn = new Date(startsOn.getTime() + 5 * 60 * 1000);
+  const credential = new StorageSharedKeyCredential(accountName, accountKey);
+  const sasToken = generateBlobSASQueryParameters({
+    containerName: "photos",
+    blobName,
+    permissions: BlobSASPermissions.parse("r"),
+    startsOn,
+    expiresOn,
+    contentDisposition: `attachment; filename="${fileName}"`
+  }, credential).toString();
+
+  context.res = {
+    status: 302,
+    headers: {
+      Location: `https://${accountName}.blob.core.windows.net/photos/${url.pathname.slice(containerPrefix.length)}?${sasToken}`,
+      "Cache-Control": "no-store"
+    }
   };
 }
 
