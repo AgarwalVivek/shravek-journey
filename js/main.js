@@ -128,25 +128,50 @@ function renderTravel() {
 // ── Render Baby Journey ──────────────────────────────────
 function renderBaby() {
   const container = document.getElementById('baby-grid');
-  const items = journeyData.baby || [];
+  const gateways = [
+    {
+      href: 'pregnancy.html#month-1',
+      image: 'https://shravekjourneyphotos.blob.core.windows.net/photos/pregnancy-journey/month-1/image-001.webp',
+      month: 'Months 1–3',
+      title: 'First Trimester',
+      description: 'The first scan and our little secret.'
+    },
+    {
+      href: 'pregnancy.html#month-4',
+      image: 'https://shravekjourneyphotos.blob.core.windows.net/photos/pregnancy-journey/month-4/image-001.webp',
+      month: 'Months 4–6',
+      title: 'Growing Together',
+      description: 'The reveal, spring blooms, and tiny kicks.'
+    },
+    {
+      href: 'pregnancy.html#month-7',
+      image: 'https://shravekjourneyphotos.blob.core.windows.net/photos/pregnancy-journey/month-7/image-001.webp',
+      month: 'Months 7–9',
+      title: 'Almost Here',
+      description: 'Our baby shower and the final countdown.'
+    },
+    {
+      href: 'pregnancy.html#arrival',
+      image: 'https://shravekjourneyphotos.blob.core.windows.net/photos/pregnancy-journey/arrival/image-001.webp',
+      month: 'August 2026',
+      title: 'Birth & Welcome Home',
+      description: 'The first hello and our first days together.'
+    }
+  ];
 
-  if (items.length === 0) {
-    container.innerHTML = '<p style="color:var(--muted);text-align:center;grid-column:1/-1">Baby journey updates coming soon...</p>';
-    return;
-  }
-
-  container.innerHTML = items.map(item => {
-    const albumLink = item.album ? `<a href="album.html?album=${encodeURIComponent(item.album)}" class="btn btn--dark baby-card__photos">View Photos →</a>` : '';
-    return `
-    <div class="baby-card">
-      <div class="baby-card__icon">${item.icon || '👶'}</div>
-      <div class="baby-card__month">${item.month || ''}</div>
-      <h3 class="baby-card__title">${item.title || ''}</h3>
-      <p class="baby-card__desc">${item.description || ''}</p>
-      ${item.photoUrl ? `<img src="${item.photoUrl}" alt="${item.title}" style="width:100%;margin-top:0.75rem;border-radius:4px" />` : ''}
-      ${albumLink}
-    </div>`;
-  }).join('');
+  container.innerHTML = gateways.map(item => `
+    <a class="baby-card baby-card--gateway" href="${item.href}">
+      <div class="baby-card__image">
+        <img src="${item.image}" alt="" loading="lazy" decoding="async" />
+      </div>
+      <div class="baby-card__body">
+        <div class="baby-card__month">${item.month}</div>
+        <h3 class="baby-card__title">${item.title}</h3>
+        <p class="baby-card__desc">${item.description}</p>
+        <span class="baby-card__link">Explore this chapter →</span>
+      </div>
+    </a>`
+  ).join('');
 }
 
 // ── Helper: detect video URLs ────────────────────────────

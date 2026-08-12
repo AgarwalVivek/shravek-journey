@@ -14,6 +14,19 @@ Edit `js/data.js` to add your own:
 The pregnancy story is available at `pregnancy.html`. Its optimized Azure media
 manifest is generated in `js/pregnancy-media.js`.
 
+To add or replace a chapter while preserving a folder's natural filename order:
+
+```powershell
+.\sync-pregnancy-folder.ps1 `
+  -SourcePath 'D:\pregnancy-journey\welcome-home-baby-202608' `
+  -Chapter 'welcome-home' `
+  -AltPrefix 'Welcome home memory'
+```
+
+The script optimizes and uploads supported images/videos, prefixes blob names
+with their sequence, and records each original filename and order in the media
+manifest. Sort the source folder by **Name** to preview the website sequence.
+
 ## Adding Photos
 
 1. Place images in the `images/` folder

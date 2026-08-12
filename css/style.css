@@ -630,6 +630,36 @@ body.revealed .hero__tagline {
   transition: transform 0.2s;
 }
 .baby-card:hover { transform: translateY(-2px); }
+.baby-card--gateway {
+  display: block;
+  padding: 0;
+  overflow: hidden;
+  color: inherit;
+  text-decoration: none;
+  text-align: left;
+}
+.baby-card--gateway:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 14px 30px rgba(75, 45, 50, 0.12);
+}
+.baby-card__image {
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--ivory-2);
+}
+.baby-card__image img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+.baby-card--gateway:hover .baby-card__image img {
+  transform: scale(1.035);
+}
+.baby-card__body {
+  padding: 1.25rem;
+}
 .baby-card__icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
 .baby-card__month {
   font-size: 0.65rem;
@@ -647,6 +677,15 @@ body.revealed .hero__tagline {
   font-size: 0.85rem;
   color: var(--muted);
   line-height: 1.5;
+}
+.baby-card__link {
+  display: inline-block;
+  margin-top: 1rem;
+  color: var(--teal);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 .baby-journey-cta {
   max-width: 700px;

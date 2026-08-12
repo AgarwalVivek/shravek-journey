@@ -93,16 +93,6 @@
   ];
 
   const media = window.PREGNANCY_MEDIA || {};
-  const arrivalMedia = media.arrival || [];
-  const welcomeHomeMedia = arrivalMedia.slice(33);
-  const featuredWelcomeHomeIndex = welcomeHomeMedia.findIndex(item => item.url.endsWith('/image-132.webp'));
-  if (featuredWelcomeHomeIndex >= 0) {
-    const [featuredWelcomeHomePhoto] = welcomeHomeMedia.splice(featuredWelcomeHomeIndex, 1);
-    featuredWelcomeHomePhoto.alt = 'Welcome home gifts prepared for our little one';
-    welcomeHomeMedia.unshift(featuredWelcomeHomePhoto);
-  }
-  media.arrival = arrivalMedia.slice(0, 33);
-  media['welcome-home'] = welcomeHomeMedia;
   const timeline = document.getElementById('pregnancy-timeline');
   const monthNav = document.getElementById('month-nav');
   const lightbox = document.getElementById('media-lightbox');
