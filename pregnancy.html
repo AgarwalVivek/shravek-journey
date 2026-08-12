@@ -13,6 +13,12 @@
   <meta property="og:url" content="https://www.shravek.com/pregnancy.html" />
   <meta property="og:type" content="website" />
   <title>Our Pregnancy Journey — Shravek</title>
+  <script>
+    document.documentElement.classList.add('pregnancy-loading');
+    window.pregnancyLoadFallback = setTimeout(function () {
+      document.documentElement.classList.remove('pregnancy-loading');
+    }, 120000);
+  </script>
   <link rel="icon" type="image/png" href="images/favicon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://shravekjourneyphotos.blob.core.windows.net" crossorigin />
@@ -21,6 +27,19 @@
   <link rel="stylesheet" href="css/pregnancy.css" />
 </head>
 <body>
+  <div class="pregnancy-preloader" id="pregnancy-preloader" role="status" aria-live="polite">
+    <div class="pregnancy-preloader__content">
+      <p class="pregnancy-preloader__logo">Shravek</p>
+      <p class="pregnancy-preloader__eyebrow">Our pregnancy journey</p>
+      <h1>Gathering our memories...</h1>
+      <div class="pregnancy-preloader__track" aria-hidden="true">
+        <span id="pregnancy-load-bar"></span>
+      </div>
+      <p class="pregnancy-preloader__status" id="pregnancy-load-status">Preparing the story</p>
+      <p class="pregnancy-preloader__note">A beautiful story is worth a little wait.</p>
+    </div>
+  </div>
+
   <nav class="nav pregnancy-nav" id="navbar">
     <a href="index.html" class="nav__logo">Shravek</a>
     <ul class="nav__links">

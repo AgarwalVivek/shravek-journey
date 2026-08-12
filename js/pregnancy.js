@@ -93,6 +93,66 @@
   let activeGallery = [];
   let activeMediaIndex = 0;
 
+  async function preloadJourneyMedia() {
+    const preloader = document.getElementById('pregnancy-preloader');
+    const progressBar = document.getElementById('pregnancy-load-bar');
+    const status = document.getElementById('pregnancy-load-status');
+    const urls = [...new Set(Object.values(media).flatMap(items => (
+      items.map(item => item.type === 'video' ? item.poster : item.url)
+    )).filter(Boolean))];
+    let completed = 0;
+    let nextIndex = 0;
+
+    function updateProgress() {
+      const percentage = urls.length ? Math.round((completed / urls.length) * 100) : 100;
+      progressBar.style.width = `${percentage}%`;
+      status.textContent = `Loading ${completed} of ${urls.length} memories · ${percentage}%`;
+    }
+
+    function loadImage(url) {
+      return new Promise(resolve => {
+        const image = new Image();
+        let settled = false;
+        const timeout = setTimeout(finish, 30000);
+
+        function finish() {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timeout);
+          image.onload = null;
+          image.onerror = null;
+          completed++;
+          updateProgress();
+          resolve();
+        }
+
+        image.onload = finish;
+        image.onerror = finish;
+        image.decoding = 'async';
+        image.src = url;
+        if (image.complete) finish();
+      });
+    }
+
+    async function worker() {
+      while (nextIndex < urls.length) {
+        const index = nextIndex++;
+        await loadImage(urls[index]);
+      }
+    }
+
+    updateProgress();
+    await Promise.all(Array.from({ length: Math.min(8, urls.length) }, worker));
+    status.textContent = 'All memories are ready';
+    progressBar.style.width = '100%';
+    await new Promise(resolve => setTimeout(resolve, 450));
+
+    clearTimeout(window.pregnancyLoadFallback);
+    document.documentElement.classList.remove('pregnancy-loading');
+    preloader.setAttribute('aria-hidden', 'true');
+    setTimeout(() => preloader.remove(), 700);
+  }
+
   monthNav.innerHTML = chapters.map(chapter => (
     `<a class="month-nav__link" href="#${chapter.id}">${chapter.nav}</a>`
   )).join('');
@@ -256,4 +316,6 @@
     navLinks.classList.remove('open');
     burger.setAttribute('aria-expanded', 'false');
   });
+
+  preloadJourneyMedia();
 })();

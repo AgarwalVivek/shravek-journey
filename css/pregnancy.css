@@ -9,6 +9,90 @@ body {
   background: var(--pregnancy-cream);
 }
 
+html.pregnancy-loading,
+html.pregnancy-loading body {
+  overflow: hidden;
+}
+
+.pregnancy-preloader {
+  position: fixed;
+  z-index: 9999;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  color: var(--white);
+  background:
+    radial-gradient(circle at 50% 30%, rgba(181, 97, 110, 0.24), transparent 36%),
+    var(--dark);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+
+html.pregnancy-loading .pregnancy-preloader {
+  opacity: 1;
+  visibility: visible;
+}
+
+.pregnancy-preloader__content {
+  width: min(470px, 100%);
+  text-align: center;
+}
+
+.pregnancy-preloader__logo {
+  margin-bottom: 2.5rem;
+  color: var(--teal-lt);
+  font-family: var(--ff-serif);
+  font-size: 1.5rem;
+  letter-spacing: 0.12em;
+}
+
+.pregnancy-preloader__eyebrow {
+  color: var(--rose-lt);
+  font-size: 0.65rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.pregnancy-preloader h1 {
+  margin: 0.65rem 0 2rem;
+  font-family: var(--ff-serif);
+  font-size: clamp(2.2rem, 7vw, 3.6rem);
+  font-weight: 300;
+  line-height: 1;
+}
+
+.pregnancy-preloader__track {
+  height: 2px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.pregnancy-preloader__track span {
+  width: 0;
+  height: 100%;
+  display: block;
+  background: linear-gradient(90deg, var(--teal-lt), var(--rose-lt));
+  transition: width 0.25s ease;
+}
+
+.pregnancy-preloader__status {
+  margin-top: 0.8rem;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.pregnancy-preloader__note {
+  margin-top: 2.5rem;
+  color: rgba(255, 255, 255, 0.35);
+  font-family: var(--ff-serif);
+  font-size: 1rem;
+  font-style: italic;
+}
+
 .pregnancy-nav .nav__logo {
   text-decoration: none;
 }
