@@ -76,15 +76,26 @@
     },
     {
       id: 'arrival',
-      nav: 'Arrival',
+      nav: 'Delivery',
       number: 'Hello',
       date: 'August 2026',
       title: 'And Then There Were Three',
-      description: 'The wait ended and our greatest chapter began. From the first cuddle to the welcome home, everything felt brand new.'
+      description: 'The wait ended and our greatest chapter began. The first hello, the first cuddle, and the moment our whole world changed.'
+    },
+    {
+      id: 'welcome-home',
+      nav: 'Welcome Home',
+      number: 'Home',
+      date: 'August 2026',
+      title: 'Welcome Home, Baby',
+      description: 'Home felt completely new with our little one in it. These are the first quiet days, family welcomes, and memories from the beginning of life together.'
     }
   ];
 
   const media = window.PREGNANCY_MEDIA || {};
+  const arrivalMedia = media.arrival || [];
+  media.arrival = arrivalMedia.slice(0, 33);
+  media['welcome-home'] = arrivalMedia.slice(33);
   const timeline = document.getElementById('pregnancy-timeline');
   const monthNav = document.getElementById('month-nav');
   const lightbox = document.getElementById('media-lightbox');
@@ -229,7 +240,7 @@
   const galleryObserver = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       if (!entry.isIntersecting) return;
-      renderGallery(entry.target.dataset.chapter, false);
+      renderGallery(entry.target.dataset.chapter, true);
       galleryObserver.unobserve(entry.target);
     });
   }, { rootMargin: '500px 0px' });
