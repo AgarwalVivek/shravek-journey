@@ -648,6 +648,21 @@ body.revealed .hero__tagline {
   color: var(--muted);
   line-height: 1.5;
 }
+.baby-journey-cta {
+  max-width: 700px;
+  margin: 3rem auto 0;
+  padding: 2.5rem;
+  border: 1px solid var(--border);
+  background: linear-gradient(135deg, #fff, #f7e9e9);
+  text-align: center;
+}
+.baby-journey-cta p {
+  margin-bottom: 1rem;
+  color: var(--muted);
+  font-family: var(--ff-serif);
+  font-size: 1.45rem;
+  font-style: italic;
+}
 
 /* ── GALLERY ─────────────────────────────────────────────── */
 .gallery-grid {

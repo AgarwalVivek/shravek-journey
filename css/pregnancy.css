@@ -1,0 +1,462 @@
+:root {
+  --pregnancy-blush: #f4dfe1;
+  --pregnancy-cream: #fffaf4;
+  --pregnancy-plum: #6b414b;
+  --pregnancy-sage: #9aaa91;
+}
+
+body {
+  background: var(--pregnancy-cream);
+}
+
+.pregnancy-nav .nav__logo {
+  text-decoration: none;
+}
+
+.pregnancy-hero {
+  position: relative;
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  color: var(--white);
+  background: #342c2e;
+}
+
+.pregnancy-hero__media,
+.pregnancy-hero__veil {
+  position: absolute;
+  inset: 0;
+}
+
+.pregnancy-hero__media img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center 42%;
+  animation: pregnancyHeroReveal 1.6s ease both;
+}
+
+.pregnancy-hero__veil {
+  background:
+    linear-gradient(90deg, rgba(28, 24, 25, 0.68), rgba(28, 24, 25, 0.18) 68%),
+    linear-gradient(0deg, rgba(28, 24, 25, 0.42), transparent 55%);
+}
+
+.pregnancy-hero__content {
+  position: relative;
+  z-index: 1;
+  width: min(1120px, calc(100% - 3rem));
+  padding-top: 5rem;
+}
+
+.pregnancy-eyebrow {
+  margin-bottom: 1rem;
+  color: var(--rose-lt);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.pregnancy-hero h1 {
+  max-width: 760px;
+  margin-bottom: 1.5rem;
+  font-family: var(--ff-serif);
+  font-size: clamp(3.2rem, 8vw, 7rem);
+  font-weight: 300;
+  line-height: 0.92;
+}
+
+.pregnancy-hero h1 em {
+  color: #f6d9dc;
+  font-weight: 300;
+}
+
+.pregnancy-hero__content > p:not(.pregnancy-eyebrow) {
+  max-width: 560px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: clamp(1rem, 2vw, 1.2rem);
+}
+
+.pregnancy-hero__cta {
+  display: inline-flex;
+  gap: 0.8rem;
+  align-items: center;
+  margin-top: 2rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.55);
+  color: var(--white);
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.pregnancy-hero__note {
+  position: absolute;
+  z-index: 1;
+  right: 2rem;
+  bottom: 1.5rem;
+  font-family: var(--ff-serif);
+  font-size: 1.1rem;
+  font-style: italic;
+  letter-spacing: 0.08em;
+}
+
+.pregnancy-hero__note span {
+  color: var(--rose-lt);
+}
+
+@keyframes pregnancyHeroReveal {
+  from { opacity: 0; transform: scale(1.08); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.month-nav {
+  position: sticky;
+  z-index: 20;
+  top: 74px;
+  overflow-x: auto;
+  border-bottom: 1px solid rgba(107, 65, 75, 0.13);
+  background: rgba(255, 250, 244, 0.94);
+  backdrop-filter: blur(12px);
+  scrollbar-width: none;
+}
+
+.month-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.month-nav__inner {
+  width: max-content;
+  min-width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 0 1rem;
+}
+
+.month-nav__link {
+  display: block;
+  padding: 1rem 0.85rem 0.8rem;
+  border-bottom: 2px solid transparent;
+  color: #8a7379;
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-decoration: none;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.month-nav__link:hover,
+.month-nav__link.active {
+  border-color: var(--rose);
+  color: var(--pregnancy-plum);
+}
+
+.journey-intro {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 7rem 2rem 5rem;
+  text-align: center;
+}
+
+.journey-intro h2 {
+  margin-bottom: 1rem;
+  color: var(--pregnancy-plum);
+  font-family: var(--ff-serif);
+  font-size: clamp(2.7rem, 6vw, 4.8rem);
+  font-weight: 300;
+  line-height: 1;
+}
+
+.journey-intro > p:not(.pregnancy-eyebrow) {
+  color: #76686b;
+  font-size: 1rem;
+}
+
+.journey-intro__line {
+  width: 1px;
+  height: 70px;
+  margin: 2.5rem auto 0;
+  background: linear-gradient(var(--rose-lt), transparent);
+}
+
+.pregnancy-chapter {
+  position: relative;
+  padding: 6rem max(2rem, calc((100vw - 1160px) / 2));
+}
+
+.pregnancy-chapter:nth-child(even) {
+  background: #f3e9e2;
+}
+
+.pregnancy-chapter--arrival {
+  color: var(--white);
+  background: var(--pregnancy-plum) !important;
+}
+
+.pregnancy-chapter__heading {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr);
+  gap: 2.5rem;
+  align-items: start;
+  max-width: 850px;
+  margin-bottom: 3rem;
+}
+
+.pregnancy-chapter:nth-child(even) .pregnancy-chapter__heading {
+  margin-left: auto;
+}
+
+.pregnancy-chapter__number {
+  color: rgba(107, 65, 75, 0.13);
+  font-family: var(--ff-serif);
+  font-size: 8rem;
+  line-height: 0.72;
+}
+
+.pregnancy-chapter--arrival .pregnancy-chapter__number {
+  color: rgba(255, 255, 255, 0.1);
+  font-size: 5rem;
+}
+
+.pregnancy-chapter__date {
+  color: var(--rose);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+}
+
+.pregnancy-chapter--arrival .pregnancy-chapter__date {
+  color: #efbdc5;
+}
+
+.pregnancy-chapter h2 {
+  margin: 0.3rem 0 0.8rem;
+  color: var(--pregnancy-plum);
+  font-family: var(--ff-serif);
+  font-size: clamp(2.6rem, 5vw, 4.5rem);
+  font-weight: 300;
+  line-height: 1;
+}
+
+.pregnancy-chapter--arrival h2 {
+  color: var(--white);
+}
+
+.pregnancy-chapter__description {
+  max-width: 610px;
+  color: #76686b;
+}
+
+.pregnancy-chapter--arrival .pregnancy-chapter__description {
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.chapter-gallery {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1rem;
+}
+
+.chapter-gallery__item {
+  position: relative;
+  grid-column: span 4;
+  overflow: hidden;
+  min-height: 260px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: #e3d8d1;
+  cursor: zoom-in;
+}
+
+.chapter-gallery__item:first-child {
+  grid-column: span 8;
+  grid-row: span 2;
+  min-height: 540px;
+}
+
+.chapter-gallery__item img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  transition: transform 0.7s ease;
+}
+
+.chapter-gallery__item:hover img {
+  transform: scale(1.035);
+}
+
+.chapter-gallery__play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 50%;
+  color: var(--white);
+  background: rgba(30, 35, 40, 0.55);
+  font-size: 1.1rem;
+  transform: translate(-50%, -50%);
+  backdrop-filter: blur(5px);
+}
+
+.chapter-gallery__empty {
+  grid-column: 1 / -1;
+  padding: 3rem;
+  border: 1px solid rgba(107, 65, 75, 0.14);
+  color: #8a7379;
+  font-family: var(--ff-serif);
+  font-size: 1.4rem;
+  font-style: italic;
+  text-align: center;
+}
+
+.chapter-gallery__more {
+  display: block;
+  margin: 2rem auto 0;
+  padding: 0.8rem 1.5rem;
+  border: 1px solid var(--pregnancy-plum);
+  border-radius: 999px;
+  color: var(--pregnancy-plum);
+  background: transparent;
+  font: 500 0.7rem var(--ff-sans);
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.pregnancy-chapter--arrival .chapter-gallery__more {
+  border-color: rgba(255, 255, 255, 0.55);
+  color: var(--white);
+}
+
+.media-lightbox {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 4rem;
+  background: rgba(19, 17, 18, 0.96);
+}
+
+.media-lightbox[hidden] {
+  display: none;
+}
+
+.media-lightbox__content {
+  max-width: min(1100px, 86vw);
+  max-height: 82vh;
+}
+
+.media-lightbox__content img,
+.media-lightbox__content video {
+  max-width: 100%;
+  max-height: 82vh;
+  display: block;
+  margin: auto;
+  object-fit: contain;
+}
+
+.media-lightbox__close,
+.media-lightbox__arrow {
+  position: absolute;
+  border: 0;
+  color: var(--white);
+  background: transparent;
+  cursor: pointer;
+}
+
+.media-lightbox__close {
+  top: 1rem;
+  right: 1.5rem;
+  font-size: 2.5rem;
+}
+
+.media-lightbox__arrow {
+  top: 50%;
+  padding: 1rem;
+  font-size: 3.2rem;
+  transform: translateY(-50%);
+}
+
+.media-lightbox__arrow--previous { left: 1rem; }
+.media-lightbox__arrow--next { right: 1rem; }
+
+.media-lightbox__counter {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  transform: translateX(-50%);
+}
+
+body.lightbox-open {
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .pregnancy-hero__veil {
+    background: linear-gradient(0deg, rgba(28, 24, 25, 0.78), rgba(28, 24, 25, 0.1) 75%);
+  }
+  .pregnancy-hero__content {
+    align-self: end;
+    padding-bottom: 7rem;
+  }
+  .pregnancy-hero__note { display: none; }
+  .month-nav { top: 62px; }
+  .month-nav__inner { justify-content: flex-start; }
+  .pregnancy-chapter { padding: 4.5rem 1.25rem; }
+  .pregnancy-chapter__heading {
+    grid-template-columns: 70px minmax(0, 1fr);
+    gap: 1rem;
+  }
+  .pregnancy-chapter__number { font-size: 5rem; }
+  .chapter-gallery__item,
+  .chapter-gallery__item:first-child {
+    grid-column: span 6;
+    grid-row: auto;
+    min-height: 220px;
+  }
+  .media-lightbox { padding: 3.5rem 0.75rem; }
+  .media-lightbox__arrow {
+    top: auto;
+    bottom: 0.25rem;
+    font-size: 2.4rem;
+    transform: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .pregnancy-hero h1 { font-size: 3.2rem; }
+  .pregnancy-chapter__heading { display: block; }
+  .pregnancy-chapter__number {
+    display: block;
+    margin-bottom: 1.5rem;
+  }
+  .chapter-gallery { gap: 0.6rem; }
+  .chapter-gallery__item,
+  .chapter-gallery__item:first-child {
+    min-height: 180px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pregnancy-hero__media img,
+  .chapter-gallery__item img {
+    animation: none;
+    transition: none;
+  }
+}
