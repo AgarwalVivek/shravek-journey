@@ -14,7 +14,8 @@ Edit `js/data.js` to add your own:
 The pregnancy story is available at `pregnancy.html`. Its optimized Azure media
 manifest is generated in `js/pregnancy-media.js`.
 
-To add or replace a chapter while preserving a folder's natural filename order:
+To add or replace a chapter while preserving each folder's natural filename
+order:
 
 ```powershell
 .\sync-pregnancy-folder.ps1 `
@@ -22,6 +23,9 @@ To add or replace a chapter while preserving a folder's natural filename order:
   -Chapter 'welcome-home' `
   -AltPrefix 'Welcome home memory'
 ```
+
+Pass multiple source folders as an array when one chapter spans more than one
+folder. The folders are processed in the order provided.
 
 The script optimizes and uploads supported images/videos, prefixes blob names
 with their sequence, and records each original filename and order in the media

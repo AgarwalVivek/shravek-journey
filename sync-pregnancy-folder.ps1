@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory = $true)]
-    [string]$SourcePath,
+    [string[]]$SourcePath,
 
     [Parameter(Mandatory = $true)]
     [ValidatePattern('^[a-z0-9-]+$')]
@@ -18,6 +18,7 @@ $manifestPath = Join-Path $PSScriptRoot 'js\pregnancy-media.js'
 $outputPath = Join-Path $env:TEMP "shravek-pregnancy-media\$Chapter"
 $blobPrefix = "pregnancy-journey/$Chapter"
 $blobRoot = "https://$StorageAccount.blob.core.windows.net/$Container/$blobPrefix"
+$assetVersion = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
 
 function Get-NaturalSortKey([string]$Name) {
     return [regex]::Replace($Name.ToLowerInvariant(), '\d+', {
@@ -32,8 +33,10 @@ function Get-SafeStem([string]$Name) {
     return $stem.Trim('-')
 }
 
-if (-not (Test-Path -LiteralPath $SourcePath -PathType Container)) {
-    throw "Source folder not found: $SourcePath"
+foreach ($path in $SourcePath) {
+    if (-not (Test-Path -LiteralPath $path -PathType Container)) {
+        throw "Source folder not found: $path"
+    }
 }
 
 $magick = (Get-Command magick -ErrorAction Stop).Source
@@ -51,9 +54,11 @@ if (-not $ffmpeg) {
 New-Item -ItemType Directory -Path $outputPath -Force | Out-Null
 Get-ChildItem -LiteralPath $outputPath -File | Remove-Item -Force
 
-$sourceFiles = Get-ChildItem -LiteralPath $SourcePath -File |
-    Where-Object { $_.Extension.ToLowerInvariant() -in ($imageExtensions + $videoExtensions) } |
-    Sort-Object @{ Expression = { Get-NaturalSortKey $_.Name } }, @{ Expression = { $_.Name } }
+$sourceFiles = foreach ($path in $SourcePath) {
+    Get-ChildItem -LiteralPath $path -File |
+        Where-Object { $_.Extension.ToLowerInvariant() -in ($imageExtensions + $videoExtensions) } |
+        Sort-Object @{ Expression = { Get-NaturalSortKey $_.Name } }, @{ Expression = { $_.Name } }
+}
 
 $assets = [System.Collections.Generic.List[object]]::new()
 $sequence = 0
@@ -74,7 +79,7 @@ foreach ($source in $sourceFiles) {
             order = $sequence
             sourceName = $source.Name
             type = 'image'
-            url = "$blobRoot/$blobName"
+            url = "$blobRoot/${blobName}?v=$assetVersion"
             alt = "$AltPrefix $sequence"
         })
         continue
@@ -94,8 +99,8 @@ foreach ($source in $sourceFiles) {
         order = $sequence
         sourceName = $source.Name
         type = 'video'
-        url = "$blobRoot/$videoName"
-        poster = "$blobRoot/$posterName"
+        url = "$blobRoot/${videoName}?v=$assetVersion"
+        poster = "$blobRoot/${posterName}?v=$assetVersion"
         alt = "$AltPrefix $sequence"
     })
 }
