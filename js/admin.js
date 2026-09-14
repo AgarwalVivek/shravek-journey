@@ -201,7 +201,7 @@
         <div class="admin-item">
           <div class="admin-item__info">
             <h3>${ev.name || ev.title}</h3>
-            <p>${ev.date || ''} — <a href="event.html?id=${ev.id}" target="_blank">View public page →</a></p>
+            <p>${ev.date || ''} — <a href="babyshower.html?id=${ev.id}" target="_blank">View public page →</a></p>
           </div>
           <div class="admin-item__actions">
             <button onclick="manageEvent('${ev.id}','${(ev.name || ev.title || '').replace(/'/g, "\\'")}')">Registry</button>
