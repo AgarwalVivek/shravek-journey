@@ -88,7 +88,7 @@ html.babyshower-memories-loading .memories-preloader {
   height: 100%;
   display: block;
   background: linear-gradient(90deg, #b96580, #f3bfd0);
-  transition: width 0.2s ease;
+  transition: width 0.1s linear;
 }
 
 .memories-preloader__status {
@@ -276,26 +276,27 @@ html.babyshower-memories-loading .memories-preloader {
 .memories-gallery {
   max-width: 1500px;
   margin: 0 auto;
-  columns: 4 260px;
-  column-gap: 0.75rem;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.7rem;
 }
 
 .memories-gallery__item {
   width: 100%;
   display: block;
-  margin: 0 0 0.75rem;
+  aspect-ratio: 4 / 5;
   padding: 0;
   overflow: hidden;
   border: 0;
-  break-inside: avoid;
   background: #eadde1;
   cursor: zoom-in;
 }
 
 .memories-gallery__item img {
   width: 100%;
-  height: auto;
+  height: 100%;
   display: block;
+  object-fit: cover;
   transition: transform 0.35s ease;
 }
 
@@ -390,12 +391,8 @@ html.babyshower-memories-loading .memories-preloader {
   }
 
   .memories-gallery {
-    columns: 2 140px;
-    column-gap: 0.45rem;
-  }
-
-  .memories-gallery__item {
-    margin-bottom: 0.45rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
   }
 
   .memories-lightbox {

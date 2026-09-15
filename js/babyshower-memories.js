@@ -7,9 +7,11 @@
   const progressBar = document.getElementById('memories-load-bar');
   const status = document.getElementById('memories-load-status');
   const gallery = document.getElementById('babyshower-gallery');
+  const film = document.getElementById('baby-shower-film-player');
   const lightbox = document.getElementById('memories-lightbox');
   const lightboxImage = lightbox.querySelector('.memories-lightbox__image');
   const lightboxCounter = lightbox.querySelector('.memories-lightbox__counter');
+  const smoothProgress = window.createSmoothProgress(progressBar);
   let activeIndex = 0;
 
   function renderGallery() {
@@ -98,11 +100,13 @@
     const urls = [...new Set([filmPoster, ...photos.map(photo => photo.url)].filter(Boolean))];
     let completed = 0;
     let nextIndex = 0;
+    let filmProgress = 0;
 
     function updateProgress() {
-      const percentage = urls.length ? Math.round((completed / urls.length) * 100) : 100;
-      progressBar.style.width = `${percentage}%`;
-      status.textContent = `Loading ${completed} of ${urls.length} memories · ${percentage}%`;
+      const imageProgress = urls.length ? completed / urls.length : 1;
+      const percentage = Math.round((filmProgress * 0.35) + (imageProgress * 65));
+      smoothProgress.set(percentage);
+      status.textContent = `Loading film ${filmProgress}% · ${completed} of ${urls.length} images`;
     }
 
     function loadImage(url) {
@@ -153,11 +157,22 @@
     }
 
     updateProgress();
-    await Promise.all(Array.from({ length: Math.min(10, urls.length) }, worker));
+    const filmPromise = window.BabyShowerFilm.preload(film, percentage => {
+      filmProgress = percentage;
+      updateProgress();
+    }).catch(error => {
+      console.error('Unable to preload the Baby Shower film.', error);
+      filmProgress = 100;
+      updateProgress();
+    });
+    await Promise.all([
+      filmPromise,
+      ...Array.from({ length: Math.min(10, urls.length) }, worker)
+    ]);
+    await smoothProgress.complete();
     renderGallery();
     status.textContent = 'All baby shower memories are ready';
-    progressBar.style.width = '100%';
-    await new Promise(resolve => setTimeout(resolve, 350));
+    await new Promise(resolve => setTimeout(resolve, 250));
     document.documentElement.classList.remove('babyshower-memories-loading');
     preloader.setAttribute('aria-hidden', 'true');
     setTimeout(() => preloader.remove(), 700);

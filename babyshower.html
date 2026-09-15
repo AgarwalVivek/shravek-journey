@@ -13,6 +13,7 @@
   <meta property="og:image" content="https://www.shravek.com/images/baby-shower-banner.png" />
   <meta property="og:url" content="https://www.shravek.com/babyshower.html" />
   <meta property="og:type" content="website" />
+  <script>document.documentElement.classList.add('babyshower-film-loading');</script>
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/event.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -20,6 +21,19 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
 </head>
 <body>
+  <div class="event-film-preloader" id="babyshower-film-preloader" role="status" aria-live="polite">
+    <div class="event-film-preloader__content">
+      <p class="event-film-preloader__logo">Shravek</p>
+      <p class="event-film-preloader__eyebrow">Before We Met You</p>
+      <h1>Preparing our baby shower film...</h1>
+      <div class="event-film-preloader__track" aria-hidden="true">
+        <span id="babyshower-film-load-bar"></span>
+      </div>
+      <p class="event-film-preloader__status" id="babyshower-film-load-status">Loading our film · 0%</p>
+      <p class="event-film-preloader__note">The celebration will begin when the complete film is ready.</p>
+    </div>
+  </div>
+
   <!-- Hero Banner -->
   <section class="event-hero event-hero--banner">
     <img src="images/baby-shower-banner.png" alt="Baby Shower Invitation" class="event-hero__banner-img" />
@@ -38,13 +52,14 @@
     </div>
     <div class="event-film__player">
       <video
+        id="baby-shower-film-player"
         controls
         playsinline
-        preload="metadata"
+        preload="none"
         poster="https://shravekjourneyphotos.blob.core.windows.net/photos/baby-shower-film/before-we-met-you-poster.webp?v=20260915"
         aria-label="Watch Before We Met You, our baby shower short film"
       >
-        <source src="https://shravekjourneyphotos.blob.core.windows.net/photos/baby-shower-film/before-we-met-you-baby-shower-film.mp4?v=20260915" type="video/mp4" />
+        <source data-src="https://shravekjourneyphotos.blob.core.windows.net/photos/baby-shower-film/before-we-met-you-baby-shower-film-original.mp4?v=20260915-original" type="video/mp4" />
         Your browser does not support embedded video.
       </video>
     </div>
@@ -195,6 +210,9 @@
     </div>
   </div>
 
+  <script src="js/smooth-progress.js"></script>
+  <script src="js/babyshower-film.js"></script>
+  <script src="js/babyshower-page.js"></script>
   <script src="js/event.js"></script>
 </body>
 </html>

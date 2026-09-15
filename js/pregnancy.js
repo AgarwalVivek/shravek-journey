@@ -105,15 +105,16 @@
     const preloader = document.getElementById('pregnancy-preloader');
     const progressBar = document.getElementById('pregnancy-load-bar');
     const status = document.getElementById('pregnancy-load-status');
+    const smoothProgress = window.createSmoothProgress(progressBar);
     const urls = [...new Set(Object.values(media).flatMap(items => (
-      items.map(item => item.type === 'video' ? item.poster : item.url)
+      items.slice(0, 6).map(item => item.type === 'video' ? item.poster : item.url)
     )).filter(Boolean))];
     let completed = 0;
     let nextIndex = 0;
 
     function updateProgress() {
       const percentage = urls.length ? Math.round((completed / urls.length) * 100) : 100;
-      progressBar.style.width = `${percentage}%`;
+      smoothProgress.set(percentage);
       status.textContent = `Loading ${completed} of ${urls.length} memories · ${percentage}%`;
     }
 
@@ -166,9 +167,9 @@
 
     updateProgress();
     await Promise.all(Array.from({ length: Math.min(8, urls.length) }, worker));
+    await smoothProgress.complete();
     status.textContent = 'All memories are ready';
-    progressBar.style.width = '100%';
-    await new Promise(resolve => setTimeout(resolve, 450));
+    await new Promise(resolve => setTimeout(resolve, 250));
 
     document.documentElement.classList.remove('pregnancy-loading');
     preloader.setAttribute('aria-hidden', 'true');
@@ -230,7 +231,8 @@
     const items = media[chapterId] || [];
     if (!gallery || !items.length) return;
 
-    const visibleItems = showAll ? items : items.slice(0, 6);
+    const isBabyShowerChapter = chapterId === 'month-7';
+    const visibleItems = showAll && !isBabyShowerChapter ? items : items.slice(0, 6);
     gallery.replaceChildren();
     visibleItems.forEach((item, index) => gallery.appendChild(createMediaButton(item, chapterId, index)));
 
@@ -238,12 +240,17 @@
     if (existingButton) existingButton.remove();
 
     if (!showAll && items.length > visibleItems.length) {
-      const more = document.createElement('button');
-      more.type = 'button';
+      const more = document.createElement(isBabyShowerChapter ? 'a' : 'button');
       more.className = 'chapter-gallery__more';
       more.dataset.more = chapterId;
-      more.textContent = `View all ${items.length} memories`;
-      more.addEventListener('click', () => renderGallery(chapterId, true));
+      if (isBabyShowerChapter) {
+        more.href = 'babyshower-memories.html';
+        more.textContent = `Watch the film & explore all ${items.length} Baby Shower memories`;
+      } else {
+        more.type = 'button';
+        more.textContent = `View all ${items.length} memories`;
+        more.addEventListener('click', () => renderGallery(chapterId, true));
+      }
       gallery.after(more);
     }
   }
@@ -251,7 +258,8 @@
   const galleryObserver = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       if (!entry.isIntersecting) return;
-      renderGallery(entry.target.dataset.chapter, true);
+      const chapterId = entry.target.dataset.chapter;
+      renderGallery(chapterId, chapterId !== 'month-7');
       galleryObserver.unobserve(entry.target);
     });
   }, { rootMargin: '500px 0px' });

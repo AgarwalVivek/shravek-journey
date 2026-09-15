@@ -74,7 +74,7 @@ html.pregnancy-loading .pregnancy-preloader {
   height: 100%;
   display: block;
   background: linear-gradient(90deg, var(--teal-lt), var(--rose-lt));
-  transition: width 0.25s ease;
+  transition: width 0.1s linear;
 }
 
 .pregnancy-preloader__status {
@@ -406,6 +406,7 @@ html.pregnancy-loading .pregnancy-preloader {
 }
 
 .chapter-gallery__more {
+  width: fit-content;
   display: block;
   margin: 2rem auto 0;
   padding: 0.8rem 1.5rem;
@@ -415,6 +416,8 @@ html.pregnancy-loading .pregnancy-preloader {
   background: transparent;
   font: 500 0.7rem var(--ff-sans);
   letter-spacing: 0.15em;
+  text-align: center;
+  text-decoration: none;
   cursor: pointer;
   text-transform: uppercase;
 }
