@@ -105,10 +105,8 @@
     const preloader = document.getElementById('pregnancy-preloader');
     const progressBar = document.getElementById('pregnancy-load-bar');
     const status = document.getElementById('pregnancy-load-status');
-    const requestedChapter = window.location.hash.slice(1);
-    const initialChapter = media[requestedChapter] ? requestedChapter : 'month-1';
-    const urls = [...new Set((media[initialChapter] || []).slice(0, 6).map(item => (
-      item.type === 'video' ? item.poster : item.url
+    const urls = [...new Set(Object.values(media).flatMap(items => (
+      items.map(item => item.type === 'video' ? item.poster : item.url)
     )).filter(Boolean))];
     let completed = 0;
     let nextIndex = 0;
@@ -172,7 +170,6 @@
     progressBar.style.width = '100%';
     await new Promise(resolve => setTimeout(resolve, 450));
 
-    clearTimeout(window.pregnancyLoadFallback);
     document.documentElement.classList.remove('pregnancy-loading');
     preloader.setAttribute('aria-hidden', 'true');
     setTimeout(() => preloader.remove(), 700);

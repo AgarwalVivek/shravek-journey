@@ -13,6 +13,74 @@
   display: block;
 }
 
+.event-film {
+  padding: clamp(3rem, 7vw, 6rem) 1.25rem;
+  color: #fff;
+  text-align: center;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(196, 107, 135, 0.28), transparent 38%),
+    linear-gradient(145deg, #191317, #302027 58%, #171216);
+}
+.event-film__intro {
+  max-width: 760px;
+  margin: 0 auto 2rem;
+}
+.event-film__badge {
+  margin-bottom: 1rem;
+  color: #f3bdce;
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+.event-film h1 {
+  margin: 0;
+  font-family: var(--ff-serif);
+  font-size: clamp(3rem, 8vw, 5.8rem);
+  font-weight: 300;
+  line-height: 0.95;
+}
+.event-film__subtitle {
+  margin-top: 0.8rem;
+  color: #f7d7e1;
+  font-family: var(--ff-serif);
+  font-size: clamp(1.15rem, 3vw, 1.65rem);
+  font-style: italic;
+}
+.event-film__description {
+  max-width: 620px;
+  margin: 1.25rem auto 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.88rem;
+  line-height: 1.75;
+}
+.event-film__player {
+  width: min(100%, 960px);
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
+  background: #000;
+  box-shadow: 0 2rem 5rem rgba(0, 0, 0, 0.45);
+}
+.event-film__player video {
+  width: 100%;
+  max-height: 78vh;
+  display: block;
+  background: #000;
+}
+.event-film__prompt {
+  margin-top: 1.3rem;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+.event-film__prompt span {
+  margin-right: 0.45rem;
+  color: #f3bdce;
+}
+
 @media (max-width: 768px) {
   .event-hero--banner {
     overflow: visible;
@@ -21,6 +89,12 @@
     width: 100%;
     height: auto;
     object-fit: contain;
+  }
+  .event-film {
+    padding-inline: 0.75rem;
+  }
+  .event-film__description {
+    padding-inline: 0.75rem;
   }
 }
 
