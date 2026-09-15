@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-MNEW54SWR1"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-MNEW54SWR1');</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Watch our baby shower short film and explore every photo from Tiny Toes & Pretty Bows." />
+  <meta property="og:title" content="Before We Met You — The Baby Shower Film" />
+  <meta property="og:description" content="Our short film and 405 memories from Tiny Toes & Pretty Bows." />
+  <meta property="og:image" content="https://shravekjourneyphotos.blob.core.windows.net/photos/baby-shower-film/before-we-met-you-poster.webp?v=20260915" />
+  <meta property="og:url" content="https://www.shravek.com/babyshower-memories.html" />
+  <meta property="og:type" content="video.other" />
+  <meta property="og:video" content="https://shravekjourneyphotos.blob.core.windows.net/photos/baby-shower-film/before-we-met-you-baby-shower-film.mp4?v=20260915" />
+  <meta property="og:video:type" content="video/mp4" />
+  <meta property="og:video:width" content="960" />
+  <meta property="og:video:height" content="720" />
+  <title>Before We Met You — Baby Shower Memories</title>
+  <script>document.documentElement.classList.add('babyshower-memories-loading');</script>
+  <link rel="icon" type="image/png" href="images/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://shravekjourneyphotos.blob.core.windows.net" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/babyshower-memories.css" />
+</head>
+<body>
+  <div class="memories-preloader" id="memories-preloader" role="status" aria-live="polite">
+    <div class="memories-preloader__content">
+      <p class="memories-preloader__logo">Shravek</p>
+      <p class="memories-preloader__eyebrow">Tiny Toes &amp; Pretty Bows</p>
+      <h1>Gathering all baby shower memories...</h1>
+      <div class="memories-preloader__track" aria-hidden="true">
+        <span id="memories-load-bar"></span>
+      </div>
+      <p class="memories-preloader__status" id="memories-load-status">Preparing our story</p>
+      <p class="memories-preloader__note">The film and every photo will appear when they are ready.</p>
+    </div>
+  </div>
+
+  <nav class="memories-nav">
+    <a class="memories-nav__logo" href="index.html">Shravek</a>
+    <div class="memories-nav__links">
+      <a href="pregnancy.html#month-7">Pregnancy Journey</a>
+      <a href="babyshower.html">Baby Shower</a>
+    </div>
+  </nav>
+
+  <main>
+    <header class="memories-hero">
+      <div class="memories-hero__content">
+        <p class="memories-eyebrow">June 7, 2026 · Our Baby Shower</p>
+        <h1>Before We Met You</h1>
+        <p class="memories-hero__subtitle">The Tiny Toes &amp; Pretty Bows Baby Shower Film</p>
+        <p class="memories-hero__description">A room full of laughter, blessings, happy tears, and love for the little one we could not wait to meet.</p>
+        <div class="memories-hero__actions">
+          <a href="#film" class="memories-button memories-button--primary">Watch the Film</a>
+          <button class="memories-button memories-button--outline" id="share-memories" type="button">Share This Page</button>
+        </div>
+        <p class="memories-share-status" id="share-status" aria-live="polite"></p>
+      </div>
+    </header>
+
+    <section class="memories-film" id="film" aria-labelledby="film-title">
+      <div class="memories-section-heading">
+        <p class="memories-eyebrow">A 4-minute short film</p>
+        <h2 id="film-title">Our celebration, in motion</h2>
+      </div>
+      <div class="memories-film__player">
+        <video
+          controls
+          playsinline
+          preload="metadata"
+          poster="https://shravekjourneyphotos.blob.core.windows.net/photos/baby-shower-film/before-we-met-you-poster.webp?v=20260915"
+          aria-label="Watch Before We Met You, our baby shower short film"
+        >
+          <source src="https://shravekjourneyphotos.blob.core.windows.net/photos/baby-shower-film/before-we-met-you-baby-shower-film.mp4?v=20260915" type="video/mp4" />
+          Your browser does not support embedded video.
+        </video>
+      </div>
+    </section>
+
+    <section class="memories-gallery-section" aria-labelledby="gallery-title">
+      <div class="memories-section-heading">
+        <p class="memories-eyebrow">Every smile, every blessing</p>
+        <h2 id="gallery-title">405 photographs</h2>
+        <p>Our complete Baby Shower collection, preserved in the order the day unfolded.</p>
+      </div>
+      <div class="memories-gallery" id="babyshower-gallery"></div>
+    </section>
+  </main>
+
+  <div class="memories-lightbox" id="memories-lightbox" role="dialog" aria-modal="true" aria-label="Baby shower photograph" hidden>
+    <button class="memories-lightbox__close" type="button" aria-label="Close photograph">&times;</button>
+    <button class="memories-lightbox__arrow memories-lightbox__arrow--previous" type="button" aria-label="Previous photograph">&#8249;</button>
+    <img class="memories-lightbox__image" alt="" />
+    <button class="memories-lightbox__arrow memories-lightbox__arrow--next" type="button" aria-label="Next photograph">&#8250;</button>
+    <p class="memories-lightbox__counter" aria-live="polite"></p>
+  </div>
+
+  <footer class="memories-footer">
+    <p class="memories-footer__logo">Shravek</p>
+    <p>Made with love for the little one who brought everyone together.</p>
+  </footer>
+
+  <script src="js/pregnancy-media.js"></script>
+  <script src="js/babyshower-memories.js"></script>
+</body>
+</html>

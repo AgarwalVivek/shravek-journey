@@ -1,0 +1,418 @@
+:root {
+  --memories-ink: #20171b;
+  --memories-rose: #b96580;
+  --memories-blush: #f5dce4;
+  --memories-cream: #fffaf7;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+html.babyshower-memories-loading,
+html.babyshower-memories-loading body {
+  overflow: hidden;
+}
+
+body {
+  color: var(--memories-ink);
+  background: var(--memories-cream);
+}
+
+.memories-preloader {
+  position: fixed;
+  z-index: 9999;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  color: #fff;
+  text-align: center;
+  background:
+    radial-gradient(circle at 50% 25%, rgba(201, 116, 143, 0.3), transparent 35%),
+    #1c1418;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+
+html.babyshower-memories-loading .memories-preloader {
+  opacity: 1;
+  visibility: visible;
+}
+
+.memories-preloader__content {
+  width: min(520px, 100%);
+}
+
+.memories-preloader__logo,
+.memories-footer__logo {
+  font-family: var(--ff-serif);
+  font-size: 1.45rem;
+  letter-spacing: 0.12em;
+}
+
+.memories-preloader__logo {
+  margin-bottom: 2.5rem;
+  color: #f0b8ca;
+}
+
+.memories-preloader__eyebrow,
+.memories-eyebrow {
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.memories-preloader__eyebrow {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.memories-preloader h1 {
+  margin: 0.75rem 0 2rem;
+  font-family: var(--ff-serif);
+  font-size: clamp(2.25rem, 8vw, 4rem);
+  font-weight: 300;
+  line-height: 1;
+}
+
+.memories-preloader__track {
+  height: 2px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.memories-preloader__track span {
+  width: 0;
+  height: 100%;
+  display: block;
+  background: linear-gradient(90deg, #b96580, #f3bfd0);
+  transition: width 0.2s ease;
+}
+
+.memories-preloader__status {
+  margin-top: 0.85rem;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.7rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.memories-preloader__note {
+  margin-top: 2.5rem;
+  color: rgba(255, 255, 255, 0.38);
+  font-family: var(--ff-serif);
+  font-style: italic;
+}
+
+.memories-nav {
+  position: absolute;
+  z-index: 20;
+  top: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.35rem clamp(1.25rem, 5vw, 4rem);
+  color: #fff;
+}
+
+.memories-nav a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.memories-nav__logo {
+  font-family: var(--ff-serif);
+  font-size: 1.35rem;
+  letter-spacing: 0.12em;
+}
+
+.memories-nav__links {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.memories-hero {
+  min-height: 92vh;
+  display: grid;
+  place-items: center;
+  padding: 7rem 1.5rem 5rem;
+  color: #fff;
+  text-align: center;
+  background:
+    linear-gradient(rgba(20, 13, 17, 0.46), rgba(20, 13, 17, 0.78)),
+    url('https://shravekjourneyphotos.blob.core.windows.net/photos/baby-shower-film/before-we-met-you-poster.webp?v=20260915') center/cover no-repeat;
+}
+
+.memories-hero__content {
+  max-width: 850px;
+}
+
+.memories-eyebrow {
+  color: var(--memories-rose);
+}
+
+.memories-hero .memories-eyebrow {
+  color: #f4c3d2;
+}
+
+.memories-hero h1 {
+  margin: 0.8rem 0 0;
+  font-family: var(--ff-serif);
+  font-size: clamp(4rem, 12vw, 8rem);
+  font-weight: 300;
+  line-height: 0.85;
+}
+
+.memories-hero__subtitle {
+  margin-top: 1.1rem;
+  color: #f8dbe4;
+  font-family: var(--ff-serif);
+  font-size: clamp(1.25rem, 3.5vw, 2rem);
+  font-style: italic;
+}
+
+.memories-hero__description {
+  max-width: 630px;
+  margin: 1.4rem auto 0;
+  color: rgba(255, 255, 255, 0.74);
+  font-size: 0.9rem;
+  line-height: 1.8;
+}
+
+.memories-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.8rem;
+  margin-top: 2rem;
+}
+
+.memories-button {
+  min-width: 165px;
+  padding: 0.9rem 1.35rem;
+  border: 1px solid #fff;
+  font-family: var(--ff-sans);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-decoration: none;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.memories-button--primary {
+  color: var(--memories-ink);
+  background: #fff;
+}
+
+.memories-button--outline {
+  color: #fff;
+  background: transparent;
+}
+
+.memories-share-status {
+  min-height: 1.2rem;
+  margin-top: 0.8rem;
+  color: #f4c3d2;
+  font-size: 0.72rem;
+}
+
+.memories-film,
+.memories-gallery-section {
+  padding: clamp(4rem, 8vw, 7rem) clamp(1rem, 4vw, 3rem);
+}
+
+.memories-film {
+  color: #fff;
+  background: #1b1418;
+}
+
+.memories-section-heading {
+  max-width: 720px;
+  margin: 0 auto 2.5rem;
+  text-align: center;
+}
+
+.memories-section-heading h2 {
+  margin: 0.5rem 0 0;
+  font-family: var(--ff-serif);
+  font-size: clamp(2.7rem, 7vw, 5rem);
+  font-weight: 300;
+  line-height: 1;
+}
+
+.memories-section-heading > p:last-child:not(.memories-eyebrow) {
+  margin-top: 1rem;
+  color: #76666d;
+  font-size: 0.88rem;
+}
+
+.memories-film .memories-section-heading h2 {
+  color: #fff;
+}
+
+.memories-film__player {
+  width: min(100%, 960px);
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: #000;
+  box-shadow: 0 2rem 5rem rgba(0, 0, 0, 0.45);
+}
+
+.memories-film__player video {
+  width: 100%;
+  max-height: 82vh;
+  display: block;
+}
+
+.memories-gallery {
+  max-width: 1500px;
+  margin: 0 auto;
+  columns: 4 260px;
+  column-gap: 0.75rem;
+}
+
+.memories-gallery__item {
+  width: 100%;
+  display: block;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  break-inside: avoid;
+  background: #eadde1;
+  cursor: zoom-in;
+}
+
+.memories-gallery__item img {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform 0.35s ease;
+}
+
+.memories-gallery__item:hover img {
+  transform: scale(1.025);
+}
+
+.memories-lightbox {
+  position: fixed;
+  z-index: 5000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 2rem 5rem;
+  background: rgba(10, 7, 9, 0.96);
+}
+
+.memories-lightbox[hidden] {
+  display: none;
+}
+
+.memories-lightbox__image {
+  max-width: 100%;
+  max-height: 88vh;
+  object-fit: contain;
+}
+
+.memories-lightbox__close,
+.memories-lightbox__arrow {
+  position: absolute;
+  border: 0;
+  color: #fff;
+  background: transparent;
+  cursor: pointer;
+}
+
+.memories-lightbox__close {
+  top: 1rem;
+  right: 1.25rem;
+  font-size: 2.2rem;
+}
+
+.memories-lightbox__arrow {
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 3.5rem;
+}
+
+.memories-lightbox__arrow--previous {
+  left: 1.25rem;
+}
+
+.memories-lightbox__arrow--next {
+  right: 1.25rem;
+}
+
+.memories-lightbox__counter {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+}
+
+.memories-footer {
+  padding: 3rem 1rem;
+  color: rgba(255, 255, 255, 0.55);
+  text-align: center;
+  background: #130e11;
+}
+
+.memories-footer__logo {
+  margin-bottom: 0.6rem;
+  color: #f0b8ca;
+}
+
+.memories-footer p:last-child {
+  font-family: var(--ff-serif);
+  font-style: italic;
+}
+
+@media (max-width: 640px) {
+  .memories-nav__links {
+    gap: 0.8rem;
+    font-size: 0.58rem;
+  }
+
+  .memories-hero {
+    min-height: 86vh;
+  }
+
+  .memories-gallery {
+    columns: 2 140px;
+    column-gap: 0.45rem;
+  }
+
+  .memories-gallery__item {
+    margin-bottom: 0.45rem;
+  }
+
+  .memories-lightbox {
+    padding: 3.5rem 0.75rem;
+  }
+
+  .memories-lightbox__arrow {
+    width: 2.5rem;
+    height: 3.5rem;
+    background: rgba(0, 0, 0, 0.35);
+  }
+
+  .memories-lightbox__arrow--previous {
+    left: 0;
+  }
+
+  .memories-lightbox__arrow--next {
+    right: 0;
+  }
+}

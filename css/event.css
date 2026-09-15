@@ -80,6 +80,23 @@
   margin-right: 0.45rem;
   color: #f3bdce;
 }
+.event-film__actions {
+  margin-top: 1.5rem;
+}
+.event-film__gallery-link {
+  display: inline-block;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid rgba(243, 189, 206, 0.55);
+  color: #f3bdce;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+.event-film__gallery-link:hover {
+  color: #fff;
+  border-bottom-color: #fff;
+}
 
 @media (max-width: 768px) {
   .event-hero--banner {
