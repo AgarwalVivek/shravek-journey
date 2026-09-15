@@ -42,14 +42,14 @@
       video.dataset.quality = useMobileVideo ? '720p' : '1080p';
       onProgress(20, video.dataset.quality);
       source.src = remoteUrl;
-      video.preload = 'metadata';
+      video.preload = 'auto';
       video.load();
       await waitForVideo(video);
       onProgress(100, video.dataset.quality);
       return remoteUrl;
     } catch (error) {
       source.src = remoteUrl;
-      video.preload = 'metadata';
+      video.preload = 'auto';
       video.load();
       throw error;
     }
