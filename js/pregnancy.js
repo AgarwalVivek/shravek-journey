@@ -105,8 +105,10 @@
     const preloader = document.getElementById('pregnancy-preloader');
     const progressBar = document.getElementById('pregnancy-load-bar');
     const status = document.getElementById('pregnancy-load-status');
-    const urls = [...new Set(Object.values(media).flatMap(items => (
-      items.map(item => item.type === 'video' ? item.poster : item.url)
+    const requestedChapter = window.location.hash.slice(1);
+    const initialChapter = media[requestedChapter] ? requestedChapter : 'month-1';
+    const urls = [...new Set((media[initialChapter] || []).slice(0, 6).map(item => (
+      item.type === 'video' ? item.poster : item.url
     )).filter(Boolean))];
     let completed = 0;
     let nextIndex = 0;
@@ -134,11 +136,26 @@
           resolve();
         }
 
-        image.onload = finish;
+        image.onload = async function () {
+          if (image.decode) {
+            try {
+              await image.decode();
+            } catch {
+              // The loaded image can still be displayed when decoding is unsupported.
+            }
+          }
+          finish();
+        };
         image.onerror = finish;
         image.decoding = 'async';
         image.src = url;
-        if (image.complete) finish();
+        if (image.complete) {
+          if (image.naturalWidth) {
+            image.onload();
+          } else {
+            finish();
+          }
+        }
       });
     }
 
