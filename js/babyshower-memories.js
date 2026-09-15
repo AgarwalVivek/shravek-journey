@@ -25,6 +25,7 @@
       button.setAttribute('aria-label', `Open baby shower photograph ${index + 1}`);
       image.src = photo.url;
       image.alt = photo.alt || `Baby shower memory ${index + 1}`;
+      image.loading = 'lazy';
       image.decoding = 'async';
       button.appendChild(image);
       button.addEventListener('click', () => openLightbox(index));
@@ -97,7 +98,7 @@
   });
 
   async function preloadMemories() {
-    const urls = [...new Set([filmPoster, ...photos.map(photo => photo.url)].filter(Boolean))];
+    const urls = [...new Set([filmPoster, ...photos.slice(0, 12).map(photo => photo.url)].filter(Boolean))];
     let completed = 0;
     let nextIndex = 0;
     let filmProgress = 0;
@@ -106,7 +107,7 @@
       const imageProgress = urls.length ? completed / urls.length : 1;
       const percentage = Math.round((filmProgress * 0.35) + (imageProgress * 65));
       smoothProgress.set(percentage);
-      status.textContent = `Loading film ${filmProgress}% · ${completed} of ${urls.length} images`;
+      status.textContent = `Preparing film and ${completed} of ${urls.length} preview images`;
     }
 
     function loadImage(url) {
@@ -157,9 +158,10 @@
     }
 
     updateProgress();
-    const filmPromise = window.BabyShowerFilm.preload(film, percentage => {
+    const filmPromise = window.BabyShowerFilm.preload(film, (percentage, quality) => {
       filmProgress = percentage;
       updateProgress();
+      if (quality) status.textContent = `Preparing ${quality} film and ${completed} of ${urls.length} previews`;
     }).catch(error => {
       console.error('Unable to preload the Baby Shower film.', error);
       filmProgress = 100;

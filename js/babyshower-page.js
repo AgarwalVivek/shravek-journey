@@ -15,8 +15,9 @@
     setTimeout(() => preloader.remove(), 700);
   }
 
-  window.BabyShowerFilm.preload(video, percentage => {
+  window.BabyShowerFilm.preload(video, (percentage, quality) => {
     smoothProgress.set(percentage);
+    if (quality) status.textContent = `Preparing the ${quality} film · ${percentage}%`;
   }).then(async () => {
     await smoothProgress.complete();
     status.textContent = 'Our film is ready';

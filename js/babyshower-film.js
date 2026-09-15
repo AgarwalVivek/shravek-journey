@@ -2,11 +2,11 @@
   'use strict';
 
   async function waitForVideo(video) {
-    if (video.readyState >= 2) return;
+    if (video.readyState >= 1) return;
 
     await new Promise((resolve, reject) => {
       function cleanup() {
-        video.removeEventListener('loadeddata', handleLoaded);
+        video.removeEventListener('loadedmetadata', handleLoaded);
         video.removeEventListener('error', handleError);
       }
 
@@ -20,53 +20,36 @@
         reject(new Error('The preloaded film could not be opened.'));
       }
 
-      video.addEventListener('loadeddata', handleLoaded, { once: true });
+      video.addEventListener('loadedmetadata', handleLoaded, { once: true });
       video.addEventListener('error', handleError, { once: true });
     });
   }
 
   async function preload(video, onProgress) {
     const source = video.querySelector('source');
-    const remoteUrl = source.dataset.src || source.src;
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    const prefersMobile = window.matchMedia('(max-width: 900px)').matches;
+    const hasConstrainedConnection = connection && (
+      connection.saveData || /(^|-)2g|3g/.test(connection.effectiveType || '')
+    );
+    const useMobileVideo = prefersMobile || hasConstrainedConnection;
+    const remoteUrl = useMobileVideo
+      ? source.dataset.srcMobile
+      : source.dataset.srcDesktop;
     if (!remoteUrl) throw new Error('The Baby Shower film URL is missing.');
 
     try {
-      const response = await fetch(remoteUrl, { cache: 'force-cache' });
-      if (!response.ok) {
-        throw new Error(`Film download failed with status ${response.status}.`);
-      }
-
-      const totalBytes = Number(response.headers.get('content-length')) || 0;
-      let filmBlob;
-
-      if (response.body && totalBytes) {
-        const reader = response.body.getReader();
-        const chunks = [];
-        let loadedBytes = 0;
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          chunks.push(value);
-          loadedBytes += value.byteLength;
-          onProgress(Math.min(100, Math.round((loadedBytes / totalBytes) * 100)));
-        }
-
-        filmBlob = new Blob(chunks, { type: 'video/mp4' });
-      } else {
-        filmBlob = await response.blob();
-      }
-
-      onProgress(100);
-      const objectUrl = URL.createObjectURL(filmBlob);
-      source.src = objectUrl;
+      video.dataset.quality = useMobileVideo ? '720p' : '1080p';
+      onProgress(20, video.dataset.quality);
+      source.src = remoteUrl;
+      video.preload = 'metadata';
       video.load();
       await waitForVideo(video);
-      window.addEventListener('beforeunload', () => URL.revokeObjectURL(objectUrl), { once: true });
-      return objectUrl;
+      onProgress(100, video.dataset.quality);
+      return remoteUrl;
     } catch (error) {
       source.src = remoteUrl;
-      video.preload = 'auto';
+      video.preload = 'metadata';
       video.load();
       throw error;
     }
