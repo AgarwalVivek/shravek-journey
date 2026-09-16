@@ -6,6 +6,10 @@ const { BlobServiceClient, generateBlobSASQueryParameters, BlobSASPermissions, S
 const { EmailClient } = require("@azure/communication-email");
 
 let cosmosContainer;
+const BABY_SHOWER_CAMPAIGN_ID = "email-campaign_babyshower-memories-20260916";
+const BABY_SHOWER_EVENT_ID = "event_1778962966548_06mo";
+const BABY_SHOWER_MEMORIES_URL = "https://www.shravek.com/babyshower-memories.html";
+const BABY_SHOWER_POSTER_URL = "https://shravekjourneyphotos.blob.core.windows.net/photos/baby-shower-film/before-we-met-you-poster.webp?v=20260915";
 
 function getContainer() {
   const connectionString = process.env.COSMOS_CONNECTION_STRING;
@@ -24,23 +28,178 @@ function getContainer() {
 }
 
 // Email helper using Azure Communication Services
-async function sendEmail({ to, subject, htmlBody }) {
+async function sendEmail({ to, subject, htmlBody, plainText }) {
   const connectionString = process.env.ACS_CONNECTION_STRING;
   const senderAddress = process.env.ACS_SENDER_EMAIL;
   if (!connectionString || !senderAddress) {
-    console.log("Email not configured (missing ACS_CONNECTION_STRING or ACS_SENDER_EMAIL)");
-    return;
+    throw new Error("Email is not configured.");
   }
+
+  const emailClient = new EmailClient(connectionString);
+  const content = { subject, html: htmlBody };
+  if (plainText) content.plainText = plainText;
+  const poller = await emailClient.beginSend({
+    senderAddress,
+    content,
+    recipients: { to: Array.isArray(to) ? to.map(e => ({ address: e })) : [{ address: to }] }
+  });
+  const result = await poller.pollUntilDone();
+  if (result.status !== "Succeeded") {
+    throw new Error(`Azure email delivery failed with status ${result.status || "Unknown"}.`);
+  }
+  return result;
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+}
+
+function maskEmail(value) {
+  const [local, domain] = String(value || "").split("@");
+  if (!local || !domain) return "";
+  const visible = local.slice(0, Math.min(2, local.length));
+  return `${visible}${"*".repeat(Math.max(2, local.length - visible.length))}@${domain}`;
+}
+
+async function requireAdmin(context, req) {
+  const authorization = (req.headers && req.headers.authorization) || "";
+  const token = (req.headers && req.headers["x-admin-token"]) ||
+    (authorization.startsWith("Bearer ") ? authorization.slice(7) : "");
+
+  if (!token) {
+    context.res = {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ success: false, error: "Admin authorization is required." })
+    };
+    return null;
+  }
+
+  const container = getContainer();
+  const { resources } = await container.items
+    .query({
+      query: "SELECT c.id, c.username FROM c WHERE c.category = 'admin' AND ARRAY_CONTAINS(c.activeTokens, @token)",
+      parameters: [{ name: "@token", value: token }]
+    })
+    .fetchAll();
+
+  if (!resources.length) {
+    context.res = {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ success: false, error: "The admin session is invalid or expired." })
+    };
+    return null;
+  }
+
+  return resources[0];
+}
+
+function buildBabyShowerAnnouncement(recipientName) {
+  const safeName = escapeHtml(recipientName || "Friend");
+  const greetingName = safeName.split(/\s+/)[0] || "Friend";
+  const subject = "Our Baby Shower Film & Photos Are Here 🎀";
+  const plainText = `Hi ${recipientName || "Friend"},
+
+Our Baby Shower film and complete photo album are ready.
+
+Watch "Before We Met You" and explore the Tiny Toes & Pretty Bows memories:
+${BABY_SHOWER_MEMORIES_URL}
+
+Thank you for filling that beautiful day with your love and blessings.
+
+With love,
+Vivek & Shraddha`;
+  const htmlBody = `
+    <!doctype html>
+    <html>
+      <body style="margin:0;padding:0;background:#f8f1f3;color:#2a1d23;font-family:Arial,sans-serif">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f8f1f3;padding:24px 12px">
+          <tr>
+            <td align="center">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;overflow:hidden;background:#ffffff;border-radius:14px;box-shadow:0 12px 40px rgba(54,31,42,.12)">
+                <tr>
+                  <td style="height:310px;background:#23171d url('${BABY_SHOWER_POSTER_URL}') center/cover no-repeat;text-align:center;vertical-align:middle">
+                    <a href="${BABY_SHOWER_MEMORIES_URL}" style="display:inline-block;width:72px;height:72px;border:2px solid #fff;border-radius:50%;color:#fff;background:rgba(27,20,24,.55);font-size:28px;line-height:72px;text-decoration:none;padding-left:4px">▶</a>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:42px 42px 38px;text-align:center">
+                    <p style="margin:0 0 12px;color:#b96580;font-size:11px;font-weight:bold;letter-spacing:2px;text-transform:uppercase">Tiny Toes &amp; Pretty Bows</p>
+                    <h1 style="margin:0;color:#2a1d23;font-family:Georgia,serif;font-size:42px;font-weight:normal;line-height:1.05">Before We Met You</h1>
+                    <p style="margin:10px 0 24px;color:#8d6876;font-family:Georgia,serif;font-size:19px;font-style:italic">Our Baby Shower film &amp; complete album</p>
+                    <p style="margin:0 0 18px;color:#4d3c43;font-size:16px;line-height:1.7">Hi ${greetingName},</p>
+                    <p style="margin:0 0 28px;color:#67555d;font-size:15px;line-height:1.75">The film and photographs from our celebration are ready. Thank you for filling that beautiful day with laughter, blessings, and so much love for our little one.</p>
+                    <a href="${BABY_SHOWER_MEMORIES_URL}" style="display:inline-block;padding:15px 26px;border-radius:999px;color:#fff;background:#a95773;font-size:12px;font-weight:bold;letter-spacing:1.4px;text-decoration:none;text-transform:uppercase">Watch the Film &amp; Explore Memories</a>
+                    <p style="margin:30px 0 0;color:#a38c95;font-family:Georgia,serif;font-size:16px;font-style:italic;line-height:1.6">With love,<br><strong style="color:#8f4c63">Vivek &amp; Shraddha</strong></p>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:16px 0 0;color:#a8959d;font-size:11px">You are receiving this because you RSVP'd to our Baby Shower.</p>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>`;
+
+  return { subject, plainText, htmlBody };
+}
+
+async function getBabyShowerEmailRecipients() {
+  const container = getContainer();
+  const { resources } = await container.items
+    .query({
+      query: "SELECT c.name, c.email FROM c WHERE c.category = 'rsvp' AND IS_DEFINED(c.email) AND (c.eventId = @eventId OR c.eventId = '' OR NOT IS_DEFINED(c.eventId))",
+      parameters: [{ name: "@eventId", value: BABY_SHOWER_EVENT_ID }]
+    })
+    .fetchAll();
+  const unique = new Map();
+
+  for (const rsvp of resources) {
+    const email = String(rsvp.email || "").trim().toLowerCase();
+    if (!isValidEmail(email) || unique.has(email)) continue;
+    unique.set(email, { email, name: String(rsvp.name || "Friend").trim() || "Friend" });
+  }
+
+  return [...unique.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+async function getCampaignRecord(container) {
   try {
-    const emailClient = new EmailClient(connectionString);
-    await emailClient.beginSend({
-      senderAddress,
-      content: { subject, html: htmlBody },
-      recipients: { to: Array.isArray(to) ? to.map(e => ({ address: e })) : [{ address: to }] }
-    });
-  } catch (err) {
-    console.log("Email send error:", err.message);
+    const { resource } = await container.item(BABY_SHOWER_CAMPAIGN_ID, "email-campaign").read();
+    return resource || null;
+  } catch (error) {
+    if (error.code === 404 || error.statusCode === 404) return null;
+    throw error;
   }
+}
+
+async function runWithConcurrency(items, limit, worker) {
+  const results = new Array(items.length);
+  let nextIndex = 0;
+
+  async function run() {
+    while (nextIndex < items.length) {
+      const index = nextIndex++;
+      try {
+        results[index] = { status: "fulfilled", value: await worker(items[index]) };
+      } catch (error) {
+        results[index] = { status: "rejected", reason: error };
+      }
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, run));
+  return results;
 }
 
 async function sendRsvpEmails(rsvp) {
@@ -135,6 +294,10 @@ module.exports = async function (context, req) {
 
       case "rsvp-lookup":
         if (req.method === "GET") return await handleRsvpLookup(context, req);
+        break;
+
+      case "email-campaign":
+        if (req.method === "GET" || req.method === "POST") return await handleEmailCampaign(context, req);
         break;
 
       case "registry":
@@ -716,6 +879,198 @@ async function handleRsvpLookup(context, req) {
       parameters: [{ name: "@email", value: email }]
     }).fetchAll();
   context.res = { status: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: true, rsvps: resources }) };
+}
+
+async function handleEmailCampaign(context, req) {
+  const admin = await requireAdmin(context, req);
+  if (!admin) return;
+
+  const container = getContainer();
+  const recipients = await getBabyShowerEmailRecipients();
+  const record = await getCampaignRecord(container);
+  const sentRecipients = new Set((record && record.sentRecipients) || []);
+  const pendingRecipients = recipients.filter(recipient => !sentRecipients.has(recipient.email));
+  const preview = buildBabyShowerAnnouncement("Ananya");
+
+  if (req.method === "GET") {
+    context.res = {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        success: true,
+        campaign: {
+          id: BABY_SHOWER_CAMPAIGN_ID,
+          subject: preview.subject,
+          totalRecipients: recipients.length,
+          sentCount: sentRecipients.size,
+          pendingCount: pendingRecipients.length,
+          status: record ? record.status : "draft",
+          completedAt: record && record.completedAt,
+          recipients: recipients.map(recipient => ({
+            name: recipient.name,
+            email: maskEmail(recipient.email),
+            sent: sentRecipients.has(recipient.email)
+          })),
+          previewHtml: preview.htmlBody
+        }
+      })
+    };
+    return;
+  }
+
+  const body = req.body || {};
+  const mode = String(body.mode || "").toLowerCase();
+
+  if (mode === "test") {
+    const testEmail = String(body.testEmail || "").trim().toLowerCase();
+    if (!isValidEmail(testEmail)) {
+      context.res = {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ success: false, error: "Enter a valid test email address." })
+      };
+      return;
+    }
+
+    const message = buildBabyShowerAnnouncement(body.testName || "Friend");
+    const result = await sendEmail({ to: testEmail, ...message });
+    context.res = {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ success: true, mode: "test", status: result.status })
+    };
+    return;
+  }
+
+  if (mode !== "send") {
+    context.res = {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ success: false, error: "Mode must be test or send." })
+    };
+    return;
+  }
+
+  const now = Date.now();
+  if (record && record.status === "sending" && Date.parse(record.lockExpiresAt || "") > now) {
+    context.res = {
+      status: 409,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ success: false, error: "This campaign is already being sent. Refresh the status before retrying." })
+    };
+    return;
+  }
+
+  if (!pendingRecipients.length) {
+    context.res = {
+      status: 409,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ success: false, error: "This campaign has already been sent to every eligible RSVP email." })
+    };
+    return;
+  }
+
+  const requiredConfirmation = `SEND TO ${pendingRecipients.length} PARTICIPANTS`;
+  if (body.confirmation !== requiredConfirmation) {
+    context.res = {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ success: false, error: `Type "${requiredConfirmation}" to confirm.` })
+    };
+    return;
+  }
+
+  const startedAt = new Date().toISOString();
+  const lockDocument = {
+    id: BABY_SHOWER_CAMPAIGN_ID,
+    category: "email-campaign",
+    campaignType: "babyshower-memories",
+    status: "sending",
+    subject: preview.subject,
+    totalRecipients: recipients.length,
+    sentRecipients: [...sentRecipients],
+    startedAt: (record && record.startedAt) || startedAt,
+    startedBy: (record && record.startedBy) || admin.username,
+    updatedAt: startedAt,
+    lockExpiresAt: new Date(now + 30 * 60 * 1000).toISOString()
+  };
+
+  let lockedRecord;
+  try {
+    if (record) {
+      const response = await container
+        .item(BABY_SHOWER_CAMPAIGN_ID, "email-campaign")
+        .replace(lockDocument, {
+          accessCondition: { type: "IfMatch", condition: record._etag }
+        });
+      lockedRecord = response.resource;
+    } else {
+      const response = await container.items.create(lockDocument);
+      lockedRecord = response.resource;
+    }
+  } catch (error) {
+    if (error.code === 409 || error.code === 412 || error.statusCode === 409 || error.statusCode === 412) {
+      context.res = {
+        status: 409,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ success: false, error: "Another campaign send started first. Refresh the status before retrying." })
+      };
+      return;
+    }
+    throw error;
+  }
+
+  const results = await runWithConcurrency(pendingRecipients, 3, async recipient => {
+    const message = buildBabyShowerAnnouncement(recipient.name);
+    const result = await sendEmail({ to: recipient.email, ...message });
+    return { email: recipient.email, status: result.status };
+  });
+
+  const newlySent = [];
+  const failed = [];
+  results.forEach((result, index) => {
+    const recipient = pendingRecipients[index];
+    if (result.status === "fulfilled") {
+      newlySent.push(recipient.email);
+    } else {
+      failed.push({ email: recipient.email, error: result.reason.message });
+    }
+  });
+
+  const allSent = [...new Set([...sentRecipients, ...newlySent])];
+  const completed = allSent.length === recipients.length;
+  const finalDocument = {
+    id: BABY_SHOWER_CAMPAIGN_ID,
+    category: "email-campaign",
+    campaignType: "babyshower-memories",
+    status: completed ? "completed" : "partial",
+    subject: preview.subject,
+    totalRecipients: recipients.length,
+    sentRecipients: allSent,
+    failedRecipients: failed,
+    startedAt: (record && record.startedAt) || startedAt,
+    completedAt: completed ? new Date().toISOString() : null,
+    updatedAt: new Date().toISOString(),
+    startedBy: (record && record.startedBy) || admin.username
+  };
+  await container
+    .item(BABY_SHOWER_CAMPAIGN_ID, "email-campaign")
+    .replace(finalDocument, {
+      accessCondition: { type: "IfMatch", condition: lockedRecord._etag }
+    });
+
+  context.res = {
+    status: failed.length ? 207 : 200,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      success: failed.length === 0,
+      sentNow: newlySent.length,
+      sentTotal: allSent.length,
+      failedCount: failed.length,
+      pendingCount: recipients.length - allSent.length,
+      error: failed.length ? "Some emails could not be delivered. The campaign can safely retry only pending recipients." : undefined
+    })
+  };
 }
 
 // --- Registry ---

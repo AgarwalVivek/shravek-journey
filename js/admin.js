@@ -34,6 +34,130 @@
     loadEvents();
   }
 
+  function adminHeaders() {
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    };
+  }
+
+  function escapeAdminHtml(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  let currentEmailCampaign;
+
+  window.loadEmailCampaign = async function () {
+    const status = document.getElementById('email-campaign-status');
+    if (!status) return;
+    status.textContent = 'Loading campaign details...';
+    status.style.color = 'var(--muted)';
+
+    try {
+      const response = await fetch(API + '/email-campaign', { headers: adminHeaders() });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error || 'Unable to load the campaign.');
+
+      currentEmailCampaign = data.campaign;
+      document.getElementById('email-campaign-subject').textContent = data.campaign.subject;
+      document.getElementById('email-total-count').textContent = data.campaign.totalRecipients;
+      document.getElementById('email-sent-count').textContent = data.campaign.sentCount;
+      document.getElementById('email-pending-count').textContent = data.campaign.pendingCount;
+      document.getElementById('email-campaign-preview').srcdoc = data.campaign.previewHtml;
+      document.getElementById('email-recipient-list').innerHTML = data.campaign.recipients.map(recipient => `
+        <span style="padding:0.45rem 0.7rem;border:1px solid ${recipient.sent ? '#86c79f' : 'var(--border)'};border-radius:999px;background:${recipient.sent ? '#edf9f1' : 'var(--ivory)'};font-size:0.72rem">
+          ${recipient.sent ? '✓ ' : ''}${escapeAdminHtml(recipient.name)} · ${escapeAdminHtml(recipient.email)}
+        </span>
+      `).join('');
+
+      const sendButton = document.getElementById('email-send-participants');
+      sendButton.disabled = data.campaign.pendingCount === 0;
+      sendButton.textContent = data.campaign.pendingCount
+        ? `Send to ${data.campaign.pendingCount} Pending Participant${data.campaign.pendingCount === 1 ? '' : 's'}`
+        : 'Campaign Complete';
+      status.textContent = data.campaign.completedAt
+        ? `Completed ${new Date(data.campaign.completedAt).toLocaleString()}`
+        : `Campaign is ${data.campaign.status}.`;
+    } catch (error) {
+      status.textContent = error.message;
+      status.style.color = '#991b1b';
+    }
+  };
+
+  window.sendCampaignTest = async function () {
+    const testEmail = document.getElementById('email-test-address').value.trim();
+    const testName = document.getElementById('email-test-name').value.trim();
+    const status = document.getElementById('email-send-status');
+    if (!testEmail) {
+      status.textContent = 'Enter a test email address.';
+      status.style.color = '#991b1b';
+      return;
+    }
+
+    status.textContent = 'Sending test email...';
+    status.style.color = 'var(--muted)';
+    try {
+      const response = await fetch(API + '/email-campaign', {
+        method: 'POST',
+        headers: adminHeaders(),
+        body: JSON.stringify({ mode: 'test', testEmail, testName })
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error || 'Test email failed.');
+      status.textContent = `Test email sent to ${testEmail}.`;
+      status.style.color = '#2a7c4f';
+    } catch (error) {
+      status.textContent = error.message;
+      status.style.color = '#991b1b';
+    }
+  };
+
+  window.sendParticipantCampaign = async function () {
+    const status = document.getElementById('email-send-status');
+    const pendingCount = currentEmailCampaign && currentEmailCampaign.pendingCount;
+    if (!pendingCount) return;
+
+    const requiredConfirmation = `SEND TO ${pendingCount} PARTICIPANTS`;
+    const confirmation = prompt(
+      `This will email ${pendingCount} RSVP participant${pendingCount === 1 ? '' : 's'} and cannot be undone.\n\nType exactly:\n${requiredConfirmation}`
+    );
+    if (confirmation === null) return;
+    if (confirmation !== requiredConfirmation) {
+      status.textContent = 'Confirmation did not match. No emails were sent.';
+      status.style.color = '#991b1b';
+      return;
+    }
+
+    const button = document.getElementById('email-send-participants');
+    button.disabled = true;
+    status.textContent = `Sending to ${pendingCount} participants...`;
+    status.style.color = 'var(--muted)';
+
+    try {
+      const response = await fetch(API + '/email-campaign', {
+        method: 'POST',
+        headers: adminHeaders(),
+        body: JSON.stringify({ mode: 'send', confirmation })
+      });
+      const data = await response.json();
+      if (!response.ok && response.status !== 207) throw new Error(data.error || 'Campaign send failed.');
+      status.textContent = data.failedCount
+        ? `Sent ${data.sentNow}; ${data.failedCount} failed and remain safe to retry.`
+        : `Sent successfully to ${data.sentNow} participants.`;
+      status.style.color = data.failedCount ? '#9a6718' : '#2a7c4f';
+      await loadEmailCampaign();
+    } catch (error) {
+      button.disabled = false;
+      status.textContent = error.message;
+      status.style.color = '#991b1b';
+    }
+  };
+
   // ─── Generic Category CRUD ───────────────────────────────
   async function loadCategory(cat) {
     const list = document.getElementById('list-' + cat);
@@ -752,6 +876,7 @@
   };
 
   // Load settings and 2FA status on page load
+  loadEmailCampaign();
   loadSettings();
   load2FAStatus();
 

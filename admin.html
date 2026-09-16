@@ -29,6 +29,7 @@
         <button class="sidebar__link" data-tab="baby">👶 Baby</button>
         <button class="sidebar__link" data-tab="photos">📷 Photos</button>
         <button class="sidebar__link" data-tab="events">🎉 Events</button>
+        <button class="sidebar__link" data-tab="email-campaign">✉️ Email Announcement</button>
         <button class="sidebar__link" data-tab="settings">⚙️ Settings</button>
       </nav>
       <button onclick="adminLogout()" style="margin:0 1.5rem;padding:0.5rem;background:none;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.5);font-size:0.75rem;cursor:pointer;margin-bottom:0.5rem">Logout</button>
@@ -337,6 +338,63 @@
             <button type="submit" class="btn btn--dark" style="width:auto;padding:0.6rem 1.5rem;margin-top:0.75rem">+ Add to Registry</button>
           </form>
           <div id="list-registry"></div>
+        </div>
+      </section>
+
+      <!-- EMAIL CAMPAIGN TAB -->
+      <section class="tab-pane" id="tab-email-campaign">
+        <h1 class="admin-title">Baby Shower Announcement</h1>
+        <p class="admin-hint">Preview and send the film-and-photos announcement to unique valid email addresses from the RSVP list. Phone-only contacts are excluded.</p>
+
+        <div class="admin-card" style="margin-bottom:2rem">
+          <div style="display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;flex-wrap:wrap">
+            <div>
+              <h3 class="admin-card__title" style="margin-bottom:0.35rem">Campaign Status</h3>
+              <p id="email-campaign-subject" style="font-size:0.85rem;color:var(--muted)">Loading...</p>
+            </div>
+            <button type="button" class="btn btn--outline" style="padding:0.5rem 1rem" onclick="loadEmailCampaign()">Refresh</button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:0.75rem;margin:1.25rem 0">
+            <div style="padding:1rem;background:var(--ivory);border:1px solid var(--border);text-align:center">
+              <strong id="email-total-count" style="display:block;font-size:1.5rem;color:var(--rose)">—</strong>
+              <span style="font-size:0.65rem;letter-spacing:0.1em;color:var(--muted);text-transform:uppercase">Eligible</span>
+            </div>
+            <div style="padding:1rem;background:var(--ivory);border:1px solid var(--border);text-align:center">
+              <strong id="email-sent-count" style="display:block;font-size:1.5rem;color:#2a7c4f">—</strong>
+              <span style="font-size:0.65rem;letter-spacing:0.1em;color:var(--muted);text-transform:uppercase">Sent</span>
+            </div>
+            <div style="padding:1rem;background:var(--ivory);border:1px solid var(--border);text-align:center">
+              <strong id="email-pending-count" style="display:block;font-size:1.5rem;color:#9a6718">—</strong>
+              <span style="font-size:0.65rem;letter-spacing:0.1em;color:var(--muted);text-transform:uppercase">Pending</span>
+            </div>
+          </div>
+          <div id="email-recipient-list" style="display:flex;flex-wrap:wrap;gap:0.5rem"></div>
+          <p id="email-campaign-status" style="font-size:0.82rem;margin-top:1rem;color:var(--muted)"></p>
+        </div>
+
+        <div class="admin-card" style="margin-bottom:2rem">
+          <h3 class="admin-card__title">Email Preview</h3>
+          <iframe id="email-campaign-preview" title="Baby Shower announcement email preview" sandbox="" style="width:100%;height:720px;border:1px solid var(--border);background:#f8f1f3"></iframe>
+        </div>
+
+        <div class="admin-card">
+          <h3 class="admin-card__title">Test &amp; Send</h3>
+          <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem">Send a test to yourself first. The participant action is protected by an exact confirmation phrase and will skip anyone already sent successfully.</p>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Test Email Address</label>
+              <input type="email" id="email-test-address" placeholder="you@example.com" />
+            </div>
+            <div class="form-group">
+              <label>Test Greeting Name</label>
+              <input type="text" id="email-test-name" placeholder="Vivek" />
+            </div>
+          </div>
+          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1rem">
+            <button type="button" class="btn btn--outline" style="padding:0.65rem 1.25rem" onclick="sendCampaignTest()">Send Test Email</button>
+            <button type="button" class="btn btn--dark" id="email-send-participants" style="width:auto;padding:0.65rem 1.25rem" onclick="sendParticipantCampaign()">Send to Pending Participants</button>
+          </div>
+          <p id="email-send-status" style="font-size:0.82rem;margin-top:1rem"></p>
         </div>
       </section>
 
