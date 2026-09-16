@@ -3,6 +3,10 @@
     {
       "route": "/babyphotoshoot",
       "rewrite": "/babyphotoshoot.html"
+    },
+    {
+      "route": "/access",
+      "rewrite": "/access.html"
     }
   ]
 }

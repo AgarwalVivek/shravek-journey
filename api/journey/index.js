@@ -27,6 +27,67 @@ function getContainer() {
   return cosmosContainer;
 }
 
+const SITE_ACCESS_COOKIE = "shravek_family_access";
+const SITE_ACCESS_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
+
+function getSiteAccessConfig() {
+  const username = process.env.SITE_ACCESS_USERNAME;
+  const password = process.env.SITE_ACCESS_PASSWORD;
+  const secret = process.env.SITE_ACCESS_SECRET;
+  if (!username || !password || !secret) {
+    throw new Error("Site access credentials are not configured.");
+  }
+  return { username, password, secret };
+}
+
+function safeEqual(left, right) {
+  const leftBuffer = Buffer.from(String(left));
+  const rightBuffer = Buffer.from(String(right));
+  return leftBuffer.length === rightBuffer.length &&
+    crypto.timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function getCookies(req) {
+  const cookieHeader = (req.headers && (req.headers.cookie || req.headers.Cookie)) || "";
+  return cookieHeader.split(";").reduce((cookies, part) => {
+    const separator = part.indexOf("=");
+    if (separator < 0) return cookies;
+    const name = part.slice(0, separator).trim();
+    const value = part.slice(separator + 1).trim();
+    if (name) cookies[name] = value;
+    return cookies;
+  }, {});
+}
+
+function createSiteAccessToken(username, secret) {
+  const payload = Buffer.from(JSON.stringify({
+    username,
+    expiresAt: Date.now() + (SITE_ACCESS_MAX_AGE_SECONDS * 1000)
+  })).toString("base64url");
+  const signature = crypto.createHmac("sha256", secret).update(payload).digest("base64url");
+  return `${payload}.${signature}`;
+}
+
+function verifySiteAccessToken(token, secret) {
+  if (!token) return false;
+  const [payload, signature, extra] = token.split(".");
+  if (!payload || !signature || extra) return false;
+
+  const expectedSignature = crypto.createHmac("sha256", secret).update(payload).digest("base64url");
+  if (!safeEqual(signature, expectedSignature)) return false;
+
+  try {
+    const data = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+    return data.expiresAt > Date.now();
+  } catch {
+    return false;
+  }
+}
+
+function siteAccessCookie(token, maxAge = SITE_ACCESS_MAX_AGE_SECONDS) {
+  return `${SITE_ACCESS_COOKIE}=${token}; Max-Age=${maxAge}; Path=/; HttpOnly; Secure; SameSite=Lax`;
+}
+
 // Email helper using Azure Communication Services
 async function sendEmail({ to, subject, htmlBody, plainText }) {
   const connectionString = process.env.ACS_CONNECTION_STRING;
@@ -276,6 +337,18 @@ module.exports = async function (context, req) {
 
       case "verify":
         if (req.method === "POST") return await handleVerify(context, req);
+        break;
+
+      case "site-login":
+        if (req.method === "POST") return await handleSiteLogin(context, req);
+        break;
+
+      case "site-auth":
+        if (req.method === "GET") return await handleSiteAuth(context, req);
+        break;
+
+      case "site-logout":
+        if (req.method === "POST") return await handleSiteLogout(context);
         break;
 
       case "events":
@@ -671,6 +744,63 @@ async function handleVerify(context, req) {
     status: 200,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ success: true, username: resources[0].username })
+  };
+}
+
+async function handleSiteLogin(context, req) {
+  const { username, password } = req.body || {};
+  const config = getSiteAccessConfig();
+  const authenticated = safeEqual(username || "", config.username) &&
+    safeEqual(password || "", config.password);
+
+  if (!authenticated) {
+    context.res = {
+      status: 401,
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store"
+      },
+      body: JSON.stringify({ success: false, error: "Invalid login ID or password." })
+    };
+    return;
+  }
+
+  const token = createSiteAccessToken(config.username, config.secret);
+  context.res = {
+    status: 200,
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+      "Set-Cookie": siteAccessCookie(token)
+    },
+    body: JSON.stringify({ success: true })
+  };
+}
+
+async function handleSiteAuth(context, req) {
+  const config = getSiteAccessConfig();
+  const token = getCookies(req)[SITE_ACCESS_COOKIE];
+  const authenticated = verifySiteAccessToken(token, config.secret);
+
+  context.res = {
+    status: authenticated ? 200 : 401,
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store"
+    },
+    body: JSON.stringify({ success: authenticated, authenticated })
+  };
+}
+
+async function handleSiteLogout(context) {
+  context.res = {
+    status: 200,
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+      "Set-Cookie": siteAccessCookie("", 0)
+    },
+    body: JSON.stringify({ success: true })
   };
 }
 

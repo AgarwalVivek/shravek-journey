@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-MNEW54SWR1"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-MNEW54SWR1');</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Family Access — Shravek Journey</title>
+  <link rel="icon" type="image/png" href="images/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/access.css" />
+</head>
+<body class="access-page">
+  <main class="access-card">
+    <p class="access-card__logo">Shravek</p>
+    <p class="access-card__eyebrow">Private family journey</p>
+    <h1>Welcome, family</h1>
+    <p class="access-card__intro">Enter the shared login ID and password to continue.</p>
+    <form id="site-access-form">
+      <div class="access-field">
+        <label for="site-access-username">Login ID</label>
+        <input id="site-access-username" name="username" type="text" autocomplete="username" required />
+      </div>
+      <div class="access-field">
+        <label for="site-access-password">Password</label>
+        <input id="site-access-password" name="password" type="password" autocomplete="current-password" required />
+      </div>
+      <button class="access-button" id="site-access-submit" type="submit">Enter Our Journey</button>
+      <p class="access-error" id="site-access-error" role="alert" aria-live="polite"></p>
+    </form>
+    <a class="access-public-link" href="babyphotoshoot">Visit the public Baby Portrait Studio</a>
+  </main>
+
+  <script src="js/access.js"></script>
+</body>
+</html>

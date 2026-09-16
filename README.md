@@ -43,6 +43,13 @@ manifest. Sort the source folder by **Name** to preview the website sequence.
 
 This is a static site — deploy to Azure Static Web Apps, GitHub Pages, or any static host.
 
+### Family Access
+
+All HTML pages except `babyphotoshoot.html` use the family-access gate in
+`js/site-access.js`. The Azure Function reads `SITE_ACCESS_USERNAME`,
+`SITE_ACCESS_PASSWORD`, and `SITE_ACCESS_SECRET` from application settings and
+issues a seven-day signed HttpOnly cookie after a successful login.
+
 ## Tech Stack
 
 - Vanilla HTML / CSS / JavaScript
