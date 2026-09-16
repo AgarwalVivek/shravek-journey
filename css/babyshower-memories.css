@@ -320,6 +320,31 @@ html.babyshower-memories-loading .memories-preloader {
   font-style: italic;
 }
 
+.memories-film__buffer-track {
+  width: min(24rem, 80%);
+  height: 3px;
+  margin-top: 1.35rem;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.memories-film__buffer-track span {
+  width: 0;
+  height: 100%;
+  display: block;
+  background: linear-gradient(90deg, #b96580, #f3bfd0);
+  transition: width 0.2s ease;
+}
+
+.memories-film__buffer .memories-film__buffer-status {
+  margin-top: 0.7rem;
+  font-family: var(--ff-sans);
+  font-size: 0.68rem;
+  font-style: normal;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 @keyframes memories-film-spin {
   to {
     transform: rotate(360deg);

@@ -26,12 +26,6 @@ const JOURNEY_DATA = {
       description: 'Surrounded by love, we became one family.'
     },
     {
-      date: '2023',
-      icon: '🏠',
-      title: 'Our First Home',
-      description: 'Built our nest — filling it with love, laughter, and dreams.'
-    },
-    {
       date: '2024',
       icon: '👶',
       title: 'Baby on the Way!',
@@ -173,7 +167,6 @@ const JOURNEY_DATA = {
     { emoji: '🌅', caption: 'Sunset' },
     { emoji: '🎂', caption: 'Celebrations' },
     { emoji: '✈️', caption: 'Adventures' },
-    { emoji: '🏡', caption: 'Home' },
     { emoji: '👶', caption: 'Baby' },
     { emoji: '🎄', caption: 'Holidays' },
     { emoji: '🌸', caption: 'Spring' }

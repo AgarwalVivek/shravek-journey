@@ -5,7 +5,7 @@ A beautiful couple & family journey website — milestones, travel adventures, b
 ## How to Customize
 
 Edit `js/data.js` to add your own:
-- **Timeline milestones** — dating, engagement, wedding, home, baby, etc.
+- **Timeline milestones** — dating, engagement, wedding, baby, etc.
 - **Travel adventures** — destinations with dates and descriptions
 - **Baby journey** — pregnancy/baby milestones
 - **Pregnancy story** — a dedicated month-by-month photo and video journey

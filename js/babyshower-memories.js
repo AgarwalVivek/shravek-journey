@@ -11,6 +11,8 @@
   const filmBuffering = document.getElementById('film-buffering');
   const filmBufferingTitle = document.getElementById('film-buffering-title');
   const filmBufferingNote = document.getElementById('film-buffering-note');
+  const filmBufferingBar = document.getElementById('film-buffering-bar');
+  const filmBufferingStatus = document.getElementById('film-buffering-status');
   const lightbox = document.getElementById('memories-lightbox');
   const lightboxImage = lightbox.querySelector('.memories-lightbox__image');
   const lightboxCounter = lightbox.querySelector('.memories-lightbox__counter');
@@ -27,6 +29,7 @@
   function showFilmBuffering() {
     if (!filmBuffering || film.paused || film.ended) return;
     filmBuffering.hidden = false;
+    updatePlaybackBuffer();
     clearInterval(bufferingMessageTimer);
     bufferingMessageTimer = setInterval(() => {
       bufferingMessageIndex = (bufferingMessageIndex + 1) % bufferingMessages.length;
@@ -40,11 +43,21 @@
     clearInterval(bufferingMessageTimer);
   }
 
+  function updatePlaybackBuffer() {
+    if (!filmBufferingStatus || !filmBufferingBar) return;
+    const bufferedSeconds = window.BabyShowerFilm.getBufferedSeconds(film);
+    const targetSeconds = 10;
+    const percentage = Math.min(100, Math.round((bufferedSeconds / targetSeconds) * 100));
+    filmBufferingBar.style.width = `${percentage}%`;
+    filmBufferingStatus.textContent = `${Math.floor(bufferedSeconds)} seconds ready · ${film.dataset.quality || 'HD'} streaming`;
+  }
+
   film.addEventListener('play', () => {
     if (film.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) showFilmBuffering();
   });
   film.addEventListener('waiting', showFilmBuffering);
   film.addEventListener('stalled', showFilmBuffering);
+  film.addEventListener('progress', updatePlaybackBuffer);
   film.addEventListener('playing', hideFilmBuffering);
   film.addEventListener('pause', hideFilmBuffering);
   film.addEventListener('canplay', () => {
@@ -204,9 +217,18 @@
     }
 
     updateProgress();
-    const filmPromise = window.BabyShowerFilm.preload(film, (percentage, quality) => {
+    const filmPromise = window.BabyShowerFilm.preload(film, (percentage, quality, details) => {
       filmProgress = percentage;
       updateProgress();
+      if (details.measuringConnection) {
+        status.textContent = 'Checking your connection for the best HD quality';
+        return;
+      }
+      const buffered = Math.floor(details.bufferedSeconds);
+      const eta = details.etaSeconds;
+      status.textContent = eta === null
+        ? `Preparing ${quality} streaming · ${buffered}s buffered`
+        : `Preparing ${quality} streaming · about ${eta}s remaining`;
     }).catch(error => {
       console.error('Unable to preload the Baby Shower film.', error);
       filmProgress = 100;
