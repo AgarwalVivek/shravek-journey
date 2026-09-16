@@ -1,80 +1,5 @@
 /* Event Page Styles */
 
-html.babyshower-film-loading,
-html.babyshower-film-loading body {
-  overflow: hidden;
-}
-
-.event-film-preloader {
-  position: fixed;
-  z-index: 9999;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  padding: 2rem;
-  color: #fff;
-  text-align: center;
-  background:
-    radial-gradient(circle at 50% 25%, rgba(201, 116, 143, 0.3), transparent 35%),
-    #1c1418;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.6s ease, visibility 0.6s ease;
-}
-.babyshower-film-loading .event-film-preloader {
-  opacity: 1;
-  visibility: visible;
-}
-.event-film-preloader__content {
-  width: min(520px, 100%);
-}
-.event-film-preloader__logo {
-  margin-bottom: 2.5rem;
-  color: #f0b8ca;
-  font-family: var(--ff-serif);
-  font-size: 1.45rem;
-  letter-spacing: 0.12em;
-}
-.event-film-preloader__eyebrow {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.65rem;
-  font-weight: 500;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-}
-.event-film-preloader h1 {
-  margin: 0.75rem 0 2rem;
-  font-family: var(--ff-serif);
-  font-size: clamp(2.25rem, 8vw, 4rem);
-  font-weight: 300;
-  line-height: 1;
-}
-.event-film-preloader__track {
-  height: 2px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.14);
-}
-.event-film-preloader__track span {
-  width: 0;
-  height: 100%;
-  display: block;
-  background: linear-gradient(90deg, #b96580, #f3bfd0);
-  transition: width 0.1s linear;
-}
-.event-film-preloader__status {
-  margin-top: 0.85rem;
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 0.7rem;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
-}
-.event-film-preloader__note {
-  margin-top: 2.5rem;
-  color: rgba(255, 255, 255, 0.38);
-  font-family: var(--ff-serif);
-  font-style: italic;
-}
-
 .event-hero--banner {
   position: relative;
   width: 100%;
@@ -88,89 +13,87 @@ html.babyshower-film-loading body {
   display: block;
 }
 
-.event-film {
-  padding: clamp(3rem, 7vw, 6rem) 1.25rem;
+.event-memories-preview {
+  padding: clamp(2rem, 5vw, 4rem) 1rem;
+  background: #1b1418;
+}
+.event-memories-preview__card {
+  max-width: 1080px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+  margin: 0 auto;
+  overflow: hidden;
   color: #fff;
-  text-align: center;
+  text-decoration: none;
+  background: #2a1d23;
+  box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.3);
+}
+.event-memories-preview__poster {
+  min-height: 360px;
+  position: relative;
+  display: grid;
+  place-items: center;
   background:
-    radial-gradient(circle at 50% 0%, rgba(196, 107, 135, 0.28), transparent 38%),
-    linear-gradient(145deg, #191317, #302027 58%, #171216);
+    linear-gradient(rgba(24, 15, 20, 0.15), rgba(24, 15, 20, 0.45)),
+    url('https://shravekjourneyphotos.blob.core.windows.net/photos/baby-shower-film/before-we-met-you-poster.webp?v=20260915') center/cover no-repeat;
 }
-.event-film__intro {
-  max-width: 760px;
-  margin: 0 auto 2rem;
+.event-memories-preview__play {
+  width: 4.5rem;
+  height: 4.5rem;
+  display: grid;
+  place-items: center;
+  padding-left: 0.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  border-radius: 50%;
+  font-size: 1.25rem;
+  background: rgba(20, 12, 16, 0.45);
+  transition: transform 0.25s ease, background 0.25s ease;
 }
-.event-film__badge {
-  margin-bottom: 1rem;
+.event-memories-preview__duration {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: rgba(20, 12, 16, 0.72);
+}
+.event-memories-preview__content {
+  align-self: center;
+  padding: clamp(2rem, 5vw, 4rem);
+}
+.event-memories-preview__eyebrow {
   color: #f3bdce;
-  font-size: 0.68rem;
-  font-weight: 500;
-  letter-spacing: 0.22em;
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
 }
-.event-film h1 {
-  margin: 0;
+.event-memories-preview h1 {
+  margin: 0.6rem 0 1rem;
   font-family: var(--ff-serif);
-  font-size: clamp(3rem, 8vw, 5.8rem);
+  font-size: clamp(2.7rem, 5vw, 4.7rem);
   font-weight: 300;
   line-height: 0.95;
 }
-.event-film__subtitle {
-  margin-top: 0.8rem;
-  color: #f7d7e1;
-  font-family: var(--ff-serif);
-  font-size: clamp(1.15rem, 3vw, 1.65rem);
-  font-style: italic;
-}
-.event-film__description {
-  max-width: 620px;
-  margin: 1.25rem auto 0;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.88rem;
+.event-memories-preview__content > p:not(.event-memories-preview__eyebrow) {
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.86rem;
   line-height: 1.75;
 }
-.event-film__player {
-  width: min(100%, 960px);
-  margin: 0 auto;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 4px;
-  background: #000;
-  box-shadow: 0 2rem 5rem rgba(0, 0, 0, 0.45);
-}
-.event-film__player video {
-  width: 100%;
-  max-height: 78vh;
-  display: block;
-  background: #000;
-}
-.event-film__prompt {
-  margin-top: 1.3rem;
-  color: rgba(255, 255, 255, 0.58);
-  font-size: 0.7rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-}
-.event-film__prompt span {
-  margin-right: 0.45rem;
-  color: #f3bdce;
-}
-.event-film__actions {
-  margin-top: 1.5rem;
-}
-.event-film__gallery-link {
+.event-memories-preview__link {
   display: inline-block;
+  margin-top: 1.5rem;
   padding-bottom: 0.35rem;
   border-bottom: 1px solid rgba(243, 189, 206, 0.55);
   color: #f3bdce;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   letter-spacing: 0.12em;
-  text-decoration: none;
   text-transform: uppercase;
 }
-.event-film__gallery-link:hover {
-  color: #fff;
-  border-bottom-color: #fff;
+.event-memories-preview__card:hover .event-memories-preview__play {
+  transform: scale(1.08);
+  background: rgba(185, 101, 128, 0.7);
 }
 
 @media (max-width: 768px) {
@@ -182,11 +105,17 @@ html.babyshower-film-loading body {
     height: auto;
     object-fit: contain;
   }
-  .event-film {
-    padding-inline: 0.75rem;
+  .event-memories-preview {
+    padding: 0;
   }
-  .event-film__description {
-    padding-inline: 0.75rem;
+  .event-memories-preview__card {
+    grid-template-columns: 1fr;
+  }
+  .event-memories-preview__poster {
+    min-height: 260px;
+  }
+  .event-memories-preview__content {
+    padding: 2.25rem 1.5rem 2.5rem;
   }
 }
 

@@ -13,7 +13,6 @@
   <meta property="og:image" content="https://www.shravek.com/images/baby-shower-banner.png" />
   <meta property="og:url" content="https://www.shravek.com/babyshower.html" />
   <meta property="og:type" content="website" />
-  <script>document.documentElement.classList.add('babyshower-film-loading');</script>
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/event.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -21,56 +20,24 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
 </head>
 <body>
-  <div class="event-film-preloader" id="babyshower-film-preloader" role="status" aria-live="polite">
-    <div class="event-film-preloader__content">
-      <p class="event-film-preloader__logo">Shravek</p>
-      <p class="event-film-preloader__eyebrow">Before We Met You</p>
-      <h1>Preparing our baby shower film...</h1>
-      <div class="event-film-preloader__track" aria-hidden="true">
-        <span id="babyshower-film-load-bar"></span>
-      </div>
-      <p class="event-film-preloader__status" id="babyshower-film-load-status">Loading our film · 0%</p>
-      <p class="event-film-preloader__note">A beautiful story is worth a little wait.</p>
-    </div>
-  </div>
-
   <!-- Hero Banner -->
   <section class="event-hero event-hero--banner">
     <img src="images/baby-shower-banner.png" alt="Baby Shower Invitation" class="event-hero__banner-img" />
   </section>
 
-  <div style="padding:0.8rem 1rem;text-align:center;background:#fff9fb;border-bottom:1px solid #f5e0e8">
-    <a href="babyshower-memories.html" style="color:var(--rose);font-size:0.78rem;letter-spacing:0.12em;text-decoration:none;text-transform:uppercase">Watch our baby shower film &amp; explore all memories →</a>
-  </div>
-
-  <section class="event-film" aria-labelledby="baby-shower-film-title">
-    <div class="event-film__intro">
-      <p class="event-film__badge">Now premiering · A 4-minute short film</p>
-      <h1 id="baby-shower-film-title">Before We Met You</h1>
-      <p class="event-film__subtitle">The Tiny Toes &amp; Pretty Bows Baby Shower Film</p>
-      <p class="event-film__description">One beautiful afternoon, surrounded by family, laughter, blessings, and all the love waiting for our little one.</p>
-    </div>
-    <div class="event-film__player">
-      <video
-        id="baby-shower-film-player"
-        controls
-        playsinline
-        preload="none"
-        poster="https://shravekjourneyphotos.blob.core.windows.net/photos/baby-shower-film/before-we-met-you-poster.webp?v=20260915"
-        aria-label="Watch Before We Met You, our baby shower short film"
-      >
-        <source
-          data-src-mobile="https://shravekjourneyphotos.blob.core.windows.net/photos/baby-shower-film/before-we-met-you-baby-shower-film-720p-359.mp4?v=20260915-359"
-          data-src-desktop="https://shravekjourneyphotos.blob.core.windows.net/photos/baby-shower-film/before-we-met-you-baby-shower-film-1080p-clean-359.mp4?v=20260915-359"
-          type="video/mp4"
-        />
-        Your browser does not support embedded video.
-      </video>
-    </div>
-    <p class="event-film__prompt"><span aria-hidden="true">▶</span> Press play to watch our story</p>
-    <div class="event-film__actions">
-      <a class="event-film__gallery-link" href="babyshower-memories.html">Watch the film &amp; explore all 405 photos →</a>
-    </div>
+  <section class="event-memories-preview" aria-labelledby="baby-shower-memories-title">
+    <a class="event-memories-preview__card" href="babyshower-memories.html">
+      <div class="event-memories-preview__poster">
+        <span class="event-memories-preview__play" aria-hidden="true">▶</span>
+        <span class="event-memories-preview__duration">3:59 short film</span>
+      </div>
+      <div class="event-memories-preview__content">
+        <p class="event-memories-preview__eyebrow">The celebration lives on</p>
+        <h1 id="baby-shower-memories-title">Before We Met You</h1>
+        <p>Watch our Baby Shower film and explore the complete Tiny Toes &amp; Pretty Bows album in one dedicated experience.</p>
+        <span class="event-memories-preview__link">Open Baby Shower Memories →</span>
+      </div>
+    </a>
   </section>
 
   <!-- Tabs -->
@@ -214,9 +181,6 @@
     </div>
   </div>
 
-  <script src="js/smooth-progress.js"></script>
-  <script src="js/babyshower-film.js"></script>
-  <script src="js/babyshower-page.js"></script>
   <script src="js/event.js"></script>
 </body>
 </html>
