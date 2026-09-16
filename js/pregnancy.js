@@ -94,7 +94,7 @@
       id: 'baby-portraits',
       nav: 'Portraits',
       number: 'Studio',
-      date: 'September 2026',
+      date: 'August 2026',
       title: 'Baby Portrait Studio',
       description: 'A playful collection of studio-inspired portraits, tiny expressions, and sweet little details from this beautiful new chapter.'
     }
