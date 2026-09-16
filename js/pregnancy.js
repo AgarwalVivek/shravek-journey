@@ -239,8 +239,18 @@
     const items = media[chapterId] || [];
     if (!gallery || !items.length) return;
 
-    const isBabyShowerChapter = chapterId === 'month-7';
-    const visibleItems = showAll && !isBabyShowerChapter ? items : items.slice(0, 6);
+    const dedicatedPages = {
+      'month-7': {
+        href: 'babyshower-memories.html',
+        label: `Watch the film & explore all ${items.length} Baby Shower memories`
+      },
+      'baby-portraits': {
+        href: 'babyphotoshoot',
+        label: `Explore all ${items.length} Baby Portrait Studio images`
+      }
+    };
+    const dedicatedPage = dedicatedPages[chapterId];
+    const visibleItems = showAll && !dedicatedPage ? items : items.slice(0, 6);
     gallery.replaceChildren();
     visibleItems.forEach((item, index) => gallery.appendChild(createMediaButton(item, chapterId, index)));
 
@@ -248,12 +258,12 @@
     if (existingButton) existingButton.remove();
 
     if (!showAll && items.length > visibleItems.length) {
-      const more = document.createElement(isBabyShowerChapter ? 'a' : 'button');
+      const more = document.createElement(dedicatedPage ? 'a' : 'button');
       more.className = 'chapter-gallery__more';
       more.dataset.more = chapterId;
-      if (isBabyShowerChapter) {
-        more.href = 'babyshower-memories.html';
-        more.textContent = `Watch the film & explore all ${items.length} Baby Shower memories`;
+      if (dedicatedPage) {
+        more.href = dedicatedPage.href;
+        more.textContent = dedicatedPage.label;
       } else {
         more.type = 'button';
         more.textContent = `View all ${items.length} memories`;
@@ -267,7 +277,7 @@
     entries.forEach(entry => {
       if (!entry.isIntersecting) return;
       const chapterId = entry.target.dataset.chapter;
-      renderGallery(chapterId, chapterId !== 'month-7');
+      renderGallery(chapterId, !['month-7', 'baby-portraits'].includes(chapterId));
       galleryObserver.unobserve(entry.target);
     });
   }, { rootMargin: '500px 0px' });

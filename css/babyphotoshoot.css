@@ -1,0 +1,302 @@
+:root {
+  --portrait-ink: #2c2226;
+  --portrait-rose: #b96580;
+  --portrait-blush: #f4dce4;
+  --portrait-cream: #fffaf6;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  color: var(--portrait-ink);
+  background: var(--portrait-cream);
+}
+
+.portrait-nav {
+  position: absolute;
+  z-index: 20;
+  top: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.35rem clamp(1.25rem, 5vw, 4rem);
+  color: #fff;
+}
+
+.portrait-nav__logo {
+  color: inherit;
+  font-family: var(--ff-serif);
+  font-size: 1.4rem;
+  letter-spacing: 0.12em;
+  text-decoration: none;
+}
+
+.portrait-nav__links {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.portrait-nav__links a,
+.portrait-nav__links button {
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: 500 0.65rem var(--ff-sans);
+  letter-spacing: 0.12em;
+  text-decoration: none;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.portrait-hero {
+  min-height: 88vh;
+  display: grid;
+  place-items: center;
+  padding: 8rem 1.5rem 5rem;
+  color: #fff;
+  text-align: center;
+  background:
+    linear-gradient(rgba(36, 24, 30, 0.42), rgba(24, 16, 20, 0.74)),
+    url("https://shravekjourneyphotos.blob.core.windows.net/photos/pregnancy-journey/baby-portraits/001-13c161b1-ad84-4909-b18f-33a7f1e87662.webp") center 36% / cover;
+}
+
+.portrait-hero__content {
+  max-width: 760px;
+}
+
+.portrait-eyebrow {
+  color: var(--portrait-rose);
+  font-size: 0.67rem;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.portrait-hero .portrait-eyebrow {
+  color: #f2c1d0;
+}
+
+.portrait-hero h1 {
+  margin: 1rem 0 1.4rem;
+  font-family: var(--ff-serif);
+  font-size: clamp(4.2rem, 12vw, 8rem);
+  font-weight: 300;
+  line-height: 0.78;
+}
+
+.portrait-hero h1 em {
+  color: #f3c6d4;
+  font-weight: 300;
+}
+
+.portrait-hero__content > p:not(.portrait-eyebrow, .portrait-share-status) {
+  max-width: 580px;
+  margin: 0 auto;
+  color: rgba(255, 255, 255, 0.78);
+  font-family: var(--ff-serif);
+  font-size: clamp(1.05rem, 2.5vw, 1.35rem);
+  font-style: italic;
+}
+
+.portrait-button {
+  display: inline-block;
+  margin-top: 2rem;
+  padding: 0.85rem 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.portrait-share-status {
+  min-height: 1.5em;
+  margin-top: 0.8rem;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.72rem;
+}
+
+.portrait-section {
+  padding: clamp(5rem, 9vw, 8rem) clamp(1rem, 4vw, 4rem);
+}
+
+.portrait-section__heading {
+  max-width: 720px;
+  margin: 0 auto 3.5rem;
+  text-align: center;
+}
+
+.portrait-section__heading h2 {
+  margin: 0.35rem 0 0.8rem;
+  font-family: var(--ff-serif);
+  font-size: clamp(3rem, 7vw, 5.5rem);
+  font-weight: 300;
+  line-height: 1;
+}
+
+.portrait-section__heading > p:last-child {
+  color: #78686f;
+}
+
+.portrait-gallery {
+  max-width: 1500px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.portrait-gallery__item {
+  width: 100%;
+  display: block;
+  aspect-ratio: 4 / 5;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  background: var(--portrait-blush);
+  cursor: zoom-in;
+}
+
+.portrait-gallery__item:first-child,
+.portrait-gallery__item:nth-child(8) {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+
+.portrait-gallery__item img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  transition: transform 0.45s ease;
+}
+
+.portrait-gallery__item:hover img {
+  transform: scale(1.025);
+}
+
+.portrait-lightbox {
+  position: fixed;
+  z-index: 5000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 2rem 5rem;
+  background: rgba(12, 8, 10, 0.97);
+}
+
+.portrait-lightbox[hidden] {
+  display: none;
+}
+
+.portrait-lightbox__image {
+  max-width: 100%;
+  max-height: 88vh;
+  object-fit: contain;
+}
+
+.portrait-lightbox__close,
+.portrait-lightbox__arrow {
+  position: absolute;
+  border: 0;
+  color: #fff;
+  background: transparent;
+  cursor: pointer;
+}
+
+.portrait-lightbox__close {
+  top: 1rem;
+  right: 1.25rem;
+  font-size: 2.2rem;
+}
+
+.portrait-lightbox__arrow {
+  top: 50%;
+  font-size: 3.5rem;
+  transform: translateY(-50%);
+}
+
+.portrait-lightbox__arrow--previous {
+  left: 1.25rem;
+}
+
+.portrait-lightbox__arrow--next {
+  right: 1.25rem;
+}
+
+.portrait-lightbox__counter {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  transform: translateX(-50%);
+}
+
+.portrait-footer {
+  padding: 3rem 1rem;
+  color: rgba(255, 255, 255, 0.58);
+  text-align: center;
+  background: #1b1317;
+}
+
+.portrait-footer__logo {
+  margin-bottom: 0.5rem;
+  color: #f0b8ca;
+  font-family: var(--ff-serif);
+  font-size: 1.45rem;
+  letter-spacing: 0.12em;
+}
+
+.portrait-footer p:last-child {
+  font-family: var(--ff-serif);
+  font-style: italic;
+}
+
+@media (max-width: 800px) {
+  .portrait-gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .portrait-gallery__item:first-child,
+  .portrait-gallery__item:nth-child(8) {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 520px) {
+  .portrait-nav__links {
+    gap: 0.8rem;
+  }
+
+  .portrait-nav__links a,
+  .portrait-nav__links button {
+    font-size: 0.55rem;
+  }
+
+  .portrait-hero {
+    min-height: 82vh;
+  }
+
+  .portrait-lightbox {
+    padding: 3.5rem 2.8rem;
+  }
+
+  .portrait-lightbox__arrow--previous {
+    left: 0.5rem;
+  }
+
+  .portrait-lightbox__arrow--next {
+    right: 0.5rem;
+  }
+}

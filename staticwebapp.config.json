@@ -1,0 +1,8 @@
+{
+  "routes": [
+    {
+      "route": "/babyphotoshoot",
+      "rewrite": "/babyphotoshoot.html"
+    }
+  ]
+}
