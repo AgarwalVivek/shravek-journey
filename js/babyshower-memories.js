@@ -8,11 +8,49 @@
   const status = document.getElementById('memories-load-status');
   const gallery = document.getElementById('babyshower-gallery');
   const film = document.getElementById('baby-shower-film-player');
+  const filmBuffering = document.getElementById('film-buffering');
+  const filmBufferingTitle = document.getElementById('film-buffering-title');
+  const filmBufferingNote = document.getElementById('film-buffering-note');
   const lightbox = document.getElementById('memories-lightbox');
   const lightboxImage = lightbox.querySelector('.memories-lightbox__image');
   const lightboxCounter = lightbox.querySelector('.memories-lightbox__counter');
   const smoothProgress = window.createSmoothProgress(progressBar);
   let activeIndex = 0;
+  let bufferingMessageTimer;
+  let bufferingMessageIndex = 0;
+  const bufferingMessages = [
+    ['Opening our story...', 'A little laughter, a few happy tears, and so much love.'],
+    ['Bringing the celebration to life...', 'The first moments are almost here.'],
+    ['Just a little longer...', 'Some memories are worth waiting a heartbeat for.']
+  ];
+
+  function showFilmBuffering() {
+    if (!filmBuffering || film.paused || film.ended) return;
+    filmBuffering.hidden = false;
+    clearInterval(bufferingMessageTimer);
+    bufferingMessageTimer = setInterval(() => {
+      bufferingMessageIndex = (bufferingMessageIndex + 1) % bufferingMessages.length;
+      [filmBufferingTitle.textContent, filmBufferingNote.textContent] = bufferingMessages[bufferingMessageIndex];
+    }, 2600);
+  }
+
+  function hideFilmBuffering() {
+    if (!filmBuffering) return;
+    filmBuffering.hidden = true;
+    clearInterval(bufferingMessageTimer);
+  }
+
+  film.addEventListener('play', () => {
+    if (film.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) showFilmBuffering();
+  });
+  film.addEventListener('waiting', showFilmBuffering);
+  film.addEventListener('stalled', showFilmBuffering);
+  film.addEventListener('playing', hideFilmBuffering);
+  film.addEventListener('pause', hideFilmBuffering);
+  film.addEventListener('canplay', () => {
+    if (!film.paused) hideFilmBuffering();
+  });
+  film.addEventListener('ended', hideFilmBuffering);
 
   function renderGallery() {
     const fragment = document.createDocumentFragment();
@@ -98,7 +136,7 @@
   });
 
   async function preloadMemories() {
-    const urls = [...new Set([filmPoster, ...photos.slice(0, 12).map(photo => photo.url)].filter(Boolean))];
+    const urls = [...new Set([filmPoster, ...photos.slice(0, 5).map(photo => photo.url)].filter(Boolean))];
     let completed = 0;
     let nextIndex = 0;
     let filmProgress = 0;
@@ -107,7 +145,15 @@
       const imageProgress = urls.length ? completed / urls.length : 1;
       const percentage = Math.round((filmProgress * 0.35) + (imageProgress * 65));
       smoothProgress.set(percentage);
-      status.textContent = `Preparing film and ${completed} of ${urls.length} preview images`;
+      if (percentage < 25) {
+        status.textContent = 'Opening the film reel';
+      } else if (percentage < 55) {
+        status.textContent = 'Bringing the first smiles into focus';
+      } else if (percentage < 85) {
+        status.textContent = 'Gathering laughter, blessings, and happy tears';
+      } else {
+        status.textContent = 'Setting the celebration in motion';
+      }
     }
 
     function loadImage(url) {
@@ -161,7 +207,6 @@
     const filmPromise = window.BabyShowerFilm.preload(film, (percentage, quality) => {
       filmProgress = percentage;
       updateProgress();
-      if (quality) status.textContent = `Preparing ${quality} film and ${completed} of ${urls.length} previews`;
     }).catch(error => {
       console.error('Unable to preload the Baby Shower film.', error);
       filmProgress = 100;
@@ -169,11 +214,11 @@
     });
     await Promise.all([
       filmPromise,
-      ...Array.from({ length: Math.min(10, urls.length) }, worker)
+      ...Array.from({ length: Math.min(4, urls.length) }, worker)
     ]);
     await smoothProgress.complete();
     renderGallery();
-    status.textContent = 'All baby shower memories are ready';
+    status.textContent = 'Your story is ready';
     await new Promise(resolve => setTimeout(resolve, 250));
     document.documentElement.classList.remove('babyshower-memories-loading');
     preloader.setAttribute('aria-hidden', 'true');

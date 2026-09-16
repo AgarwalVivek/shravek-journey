@@ -2,26 +2,40 @@
   'use strict';
 
   async function waitForVideo(video) {
-    if (video.readyState >= 1) return;
+    if (video.readyState < 1) {
+      await new Promise((resolve, reject) => {
+        function cleanup() {
+          video.removeEventListener('loadedmetadata', handleLoaded);
+          video.removeEventListener('error', handleError);
+        }
 
-    await new Promise((resolve, reject) => {
-      function cleanup() {
-        video.removeEventListener('loadedmetadata', handleLoaded);
-        video.removeEventListener('error', handleError);
-      }
+        function handleLoaded() {
+          cleanup();
+          resolve();
+        }
 
-      function handleLoaded() {
-        cleanup();
+        function handleError() {
+          cleanup();
+          reject(new Error('The preloaded film could not be opened.'));
+        }
+
+        video.addEventListener('loadedmetadata', handleLoaded, { once: true });
+        video.addEventListener('error', handleError, { once: true });
+      });
+    }
+
+    if (video.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) return;
+
+    await new Promise(resolve => {
+      const timeout = setTimeout(finish, 7000);
+
+      function finish() {
+        clearTimeout(timeout);
+        video.removeEventListener('canplay', finish);
         resolve();
       }
 
-      function handleError() {
-        cleanup();
-        reject(new Error('The preloaded film could not be opened.'));
-      }
-
-      video.addEventListener('loadedmetadata', handleLoaded, { once: true });
-      video.addEventListener('error', handleError, { once: true });
+      video.addEventListener('canplay', finish, { once: true });
     });
   }
 
@@ -39,7 +53,7 @@
     if (!remoteUrl) throw new Error('The Baby Shower film URL is missing.');
 
     try {
-      video.dataset.quality = useMobileVideo ? '720p' : '1080p';
+      video.dataset.quality = useMobileVideo ? '480p' : '1080p';
       onProgress(20, video.dataset.quality);
       source.src = remoteUrl;
       video.preload = 'auto';

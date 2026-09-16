@@ -259,6 +259,7 @@ html.babyshower-memories-loading .memories-preloader {
 }
 
 .memories-film__player {
+  position: relative;
   width: min(100%, 960px);
   margin: 0 auto;
   overflow: hidden;
@@ -271,6 +272,58 @@ html.babyshower-memories-loading .memories-preloader {
   width: 100%;
   max-height: 82vh;
   display: block;
+}
+
+.memories-film__buffer {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: #fff;
+  text-align: center;
+  pointer-events: none;
+  background: radial-gradient(circle at center, rgba(63, 39, 49, 0.72), rgba(10, 7, 8, 0.9));
+  backdrop-filter: blur(3px);
+}
+
+.memories-film__buffer[hidden] {
+  display: none;
+}
+
+.memories-film__buffer-ring {
+  width: 3.25rem;
+  height: 3.25rem;
+  margin-bottom: 1.1rem;
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  border-top-color: #f3bfd0;
+  border-radius: 50%;
+  animation: memories-film-spin 0.9s linear infinite;
+}
+
+.memories-film__buffer p {
+  margin: 0;
+  font-family: var(--ff-serif);
+  font-size: clamp(1.65rem, 5vw, 2.7rem);
+  font-weight: 300;
+}
+
+.memories-film__buffer small {
+  max-width: 30rem;
+  margin-top: 0.65rem;
+  color: rgba(255, 255, 255, 0.72);
+  font-family: var(--ff-serif);
+  font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+  font-style: italic;
+}
+
+@keyframes memories-film-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .memories-gallery {
