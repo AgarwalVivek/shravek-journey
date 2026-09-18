@@ -8,8 +8,20 @@
   const returnTo = requestedReturn && requestedReturn.startsWith('/') && !requestedReturn.startsWith('//')
     ? requestedReturn
     : '/index.html';
+  const returnPath = returnTo.split(/[?#]/)[0].toLowerCase();
+  const babyShowerAccess = returnPath === '/babyshower.html' ||
+    returnPath === '/babyshower' ||
+    returnPath === '/babyshower-memories.html' ||
+    returnPath === '/babyshower-memories';
 
-  fetch('/api/journey/site-auth', {
+  if (babyShowerAccess) {
+    document.getElementById('site-access-eyebrow').textContent = 'Private Baby Shower memories';
+    document.getElementById('site-access-title').textContent = 'Baby Shower access';
+    document.getElementById('site-access-intro').textContent = 'Enter the Baby Shower username and password shared with you.';
+    submit.textContent = 'Open Baby Shower Memories';
+  }
+
+  fetch(`/api/journey/site-auth?page=${encodeURIComponent(returnPath)}`, {
     credentials: 'same-origin',
     cache: 'no-store'
   }).then(response => {
@@ -29,7 +41,8 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username: document.getElementById('site-access-username').value.trim(),
-          password: document.getElementById('site-access-password').value
+          password: document.getElementById('site-access-password').value,
+          page: returnPath
         })
       });
       const result = await response.json();
@@ -40,7 +53,7 @@
     } catch (requestError) {
       error.textContent = requestError.message || 'Unable to sign in. Please try again.';
       submit.disabled = false;
-      submit.textContent = 'Enter Our Journey';
+      submit.textContent = babyShowerAccess ? 'Open Baby Shower Memories' : 'Enter Our Journey';
     }
   });
 })();

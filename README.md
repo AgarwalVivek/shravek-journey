@@ -45,10 +45,13 @@ This is a static site — deploy to Azure Static Web Apps, GitHub Pages, or any 
 
 ### Family Access
 
-All HTML pages except `babyphotoshoot.html` use the family-access gate in
-`js/site-access.js`. The Azure Function reads `SITE_ACCESS_USERNAME`,
-`SITE_ACCESS_PASSWORD`, and `SITE_ACCESS_SECRET` from application settings and
-issues a seven-day signed HttpOnly cookie after a successful login.
+All HTML pages except `babyphotoshoot.html` use the access gate in
+`js/site-access.js`. The Baby Shower pages use their own
+`BABY_SHOWER_ACCESS_USERNAME` and `BABY_SHOWER_ACCESS_PASSWORD`; the remaining
+private pages use `SITE_ACCESS_USERNAME` and `SITE_ACCESS_PASSWORD`.
+`SITE_ACCESS_SECRET` signs the separate seven-day HttpOnly login cookies.
+Baby Shower sharing sends the normal page URL and its username/password rather
+than creating a signed, single-use URL.
 
 ## Tech Stack
 

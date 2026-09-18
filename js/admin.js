@@ -130,7 +130,7 @@
     }
 
     button.disabled = true;
-    status.textContent = 'Creating the private link and sending email...';
+    status.textContent = 'Sending the Baby Shower link and login details...';
     status.style.color = 'var(--muted)';
 
     try {
@@ -140,8 +140,8 @@
         body: JSON.stringify({ mode: 'share', email, name })
       });
       const data = await response.json();
-      if (!response.ok || !data.success) throw new Error(data.error || 'Private video link could not be sent.');
-      status.textContent = `Private video link sent to ${email}.`;
+      if (!response.ok || !data.success) throw new Error(data.error || 'Baby Shower link could not be sent.');
+      status.textContent = `Baby Shower link and login details sent to ${email}.`;
       status.style.color = '#2a7c4f';
       document.getElementById('video-share-email').value = '';
       document.getElementById('video-share-name').value = '';

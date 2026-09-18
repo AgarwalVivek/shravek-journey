@@ -22,20 +22,50 @@
   let bufferingMessageTimer;
   let bufferingMessageIndex = 0;
   let preloaderMessageIndex = 0;
-  const preloaderMessages = [
-    'This high-quality film may take about a minute, or a little longer, to play smoothly on slower connections.',
-    'The first smiles are coming into focus.',
-    'Laughter, blessings, and happy tears are almost ready.',
-    'Stay with us—the film will begin automatically and continue loading as it plays.'
+  const loadingActions = [
+    'Polishing',
+    'Bringing into focus',
+    'Preparing',
+    'Unwrapping',
+    'Gathering',
+    'Rendering',
+    'Setting the scene for',
+    'Adding the finishing touch to'
   ];
+  const loadingMoments = [
+    'the smiles you may recognize',
+    'the moments where you might spot yourself',
+    'every laugh from the celebration',
+    'the blessings shared with our little one',
+    'the dance-floor memories',
+    'the hugs, happy tears, and candid moments',
+    'the celebration from beginning to end',
+    'a few surprises waiting later in the film',
+    'the people who made the day unforgettable',
+    'the final moments worth staying for',
+    'the complete high-quality film',
+    'every familiar face in the room'
+  ];
+
+  function nextEngagementMessage() {
+    const action = loadingActions[preloaderMessageIndex % loadingActions.length];
+    const moment = loadingMoments[(preloaderMessageIndex * 5) % loadingMoments.length];
+    preloaderMessageIndex++;
+    return `${action} ${moment}... Please stay until the end—you may see yourself in the film.`;
+  }
+
   const bufferingMessages = [
-    ['Opening our story...', 'A little laughter, a few happy tears, and so much love.'],
-    ['Bringing the celebration to life...', 'The first moments are almost here.'],
-    ['Just a little longer...', 'Some memories are worth waiting a heartbeat for.']
+    ['Opening our story...', 'Stay with us—you may spot yourself in the next scene.'],
+    ['Bringing the celebration to life...', 'Every familiar face is worth waiting for.'],
+    ['Rendering the next moments...', 'The high-quality film will continue as soon as enough is ready.'],
+    ['Gathering smiles and laughter...', 'Your moment may be coming up—please watch until the end.'],
+    ['Preparing more memories...', 'The film includes candid moments from across the celebration.'],
+    ['Almost back to the celebration...', 'Please hold on while the next high-quality scene loads.'],
+    ['Finding the next familiar faces...', 'Someone you know—or you—may appear next.'],
+    ['Keeping the film crisp and clear...', 'A little wait helps the video play more smoothly.']
   ];
   const preloaderMessageTimer = setInterval(() => {
-    preloaderMessageIndex = (preloaderMessageIndex + 1) % preloaderMessages.length;
-    preloaderNote.textContent = preloaderMessages[preloaderMessageIndex];
+    preloaderNote.textContent = nextEngagementMessage();
   }, 2800);
 
   function showFilmBuffering() {
@@ -139,23 +169,31 @@
 
   document.getElementById('share-memories').addEventListener('click', async () => {
     const shareStatus = document.getElementById('share-status');
-    const shareData = {
-      title: 'Before We Met You — Baby Shower Memories',
-      text: 'Watch our baby shower film and explore every photo from the celebration.',
-      url: window.location.href
-    };
 
     try {
+      const response = await fetch('/api/journey/site-share-info', {
+        credentials: 'same-origin',
+        cache: 'no-store'
+      });
+      const shareData = await response.json();
+      if (!response.ok || !shareData.success) {
+        throw new Error(shareData.error || 'Unable to prepare sharing details.');
+      }
+
       if (navigator.share) {
-        await navigator.share(shareData);
+        await navigator.share({
+          title: shareData.title,
+          text: shareData.text,
+          url: shareData.url
+        });
         shareStatus.textContent = 'Shared successfully';
       } else {
-        await navigator.clipboard.writeText(window.location.href);
-        shareStatus.textContent = 'Link copied to clipboard';
+        await navigator.clipboard.writeText(`${shareData.text}\n\n${shareData.url}`);
+        shareStatus.textContent = 'Link and login details copied to clipboard';
       }
     } catch (error) {
       if (error.name !== 'AbortError') {
-        shareStatus.textContent = 'Copy the page address from your browser to share it';
+        shareStatus.textContent = error.message || 'Unable to share the page';
       }
     }
   });
@@ -235,13 +273,13 @@
       filmProgress = percentage;
       updateProgress();
       if (details.measuringConnection) {
-        status.textContent = 'Preparing the best experience for your connection';
+        status.textContent = 'Preparing the best high-quality experience for your connection';
         return;
       }
       const buffered = Math.floor(details.bufferedSeconds);
       const eta = details.etaSeconds;
       status.textContent = eta === null
-        ? `High-quality film · ${buffered}s ready · slower connections may take a minute or a little longer`
+        ? `High-quality film · ${buffered}s ready · please stay until the end to spot familiar faces`
         : `Worth a little wait · about ${eta} second${eta === 1 ? '' : 's'} to go`;
     }).catch(error => {
       console.error('Unable to preload the Baby Shower film.', error);
