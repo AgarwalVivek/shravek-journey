@@ -14,6 +14,8 @@
   const filmBufferingNote = document.getElementById('film-buffering-note');
   const filmBufferingBar = document.getElementById('film-buffering-bar');
   const filmBufferingStatus = document.getElementById('film-buffering-status');
+  const filmQuality = document.getElementById('film-quality');
+  const filmQualityStatus = document.getElementById('film-quality-status');
   const lightbox = document.getElementById('memories-lightbox');
   const lightboxImage = lightbox.querySelector('.memories-lightbox__image');
   const lightboxCounter = lightbox.querySelector('.memories-lightbox__counter');
@@ -85,6 +87,105 @@
     clearInterval(bufferingMessageTimer);
   }
 
+  function qualityUrl(quality) {
+    const source = film.querySelector('source');
+    return quality === '1080p' ? source.dataset.srcDesktop : source.dataset.srcMobile;
+  }
+
+  function updateQualityStatus(selectedQuality, activeQuality) {
+    filmQualityStatus.textContent = selectedQuality === 'auto'
+      ? `Auto selected ${activeQuality}`
+      : `${activeQuality} selected`;
+  }
+
+  function waitForMediaEvent(eventNames, timeoutMs = 20000) {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => finish(new Error('The selected video quality took too long to load.')), timeoutMs);
+
+      function cleanup() {
+        clearTimeout(timeout);
+        eventNames.forEach(eventName => film.removeEventListener(eventName, handleSuccess));
+        film.removeEventListener('error', handleError);
+      }
+
+      function finish(error) {
+        cleanup();
+        if (error) reject(error);
+        else resolve();
+      }
+
+      function handleSuccess() {
+        finish();
+      }
+
+      function handleError() {
+        finish(new Error('The selected video quality could not be loaded.'));
+      }
+
+      eventNames.forEach(eventName => film.addEventListener(eventName, handleSuccess, { once: true }));
+      film.addEventListener('error', handleError, { once: true });
+    });
+  }
+
+  async function changeFilmQuality(selectedQuality) {
+    const source = film.querySelector('source');
+    filmQuality.disabled = true;
+    filmQualityStatus.textContent = 'Switching quality...';
+
+    try {
+      const selection = selectedQuality === 'auto'
+        ? await window.BabyShowerFilm.chooseQuality(source)
+        : { quality: selectedQuality };
+      const activeQuality = selection.quality;
+
+      if (film.dataset.quality === activeQuality) {
+        updateQualityStatus(selectedQuality, activeQuality);
+        return;
+      }
+
+      const currentTime = film.currentTime;
+      const shouldResume = !film.paused && !film.ended;
+      const volume = film.volume;
+      const muted = film.muted;
+      const playbackRate = film.playbackRate;
+
+      filmBuffering.hidden = false;
+      filmBufferingTitle.textContent = `Switching to ${activeQuality}...`;
+      filmBufferingNote.textContent = 'Keeping your place in the film.';
+      source.src = qualityUrl(activeQuality);
+      film.dataset.quality = activeQuality;
+      film.load();
+      await waitForMediaEvent(['loadedmetadata']);
+
+      if (currentTime > 0 && Number.isFinite(film.duration)) {
+        const seekReady = waitForMediaEvent(['seeked', 'canplay']);
+        film.currentTime = Math.min(currentTime, Math.max(0, film.duration - 0.1));
+        await seekReady;
+      } else if (film.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) {
+        await waitForMediaEvent(['canplay']);
+      }
+
+      film.volume = volume;
+      film.muted = muted;
+      film.playbackRate = playbackRate;
+      hideFilmBuffering();
+      updateQualityStatus(selectedQuality, activeQuality);
+
+      if (shouldResume) {
+        try {
+          await film.play();
+        } catch {
+          filmQualityStatus.textContent += ' · press play to resume';
+        }
+      }
+    } catch (error) {
+      hideFilmBuffering();
+      filmQualityStatus.textContent = error.message || 'Unable to switch video quality.';
+    } finally {
+      filmQuality.disabled = false;
+    }
+  }
+
   function updatePlaybackBuffer() {
     if (!filmBufferingStatus || !filmBufferingBar) return;
     const bufferedSeconds = window.BabyShowerFilm.getBufferedSeconds(film);
@@ -106,6 +207,7 @@
     if (!film.paused) hideFilmBuffering();
   });
   film.addEventListener('ended', hideFilmBuffering);
+  filmQuality.addEventListener('change', () => changeFilmQuality(filmQuality.value));
 
   function renderGallery() {
     const fragment = document.createDocumentFragment();
@@ -271,6 +373,7 @@
     updateProgress();
     const filmPromise = window.BabyShowerFilm.preload(film, (percentage, quality, details) => {
       filmProgress = percentage;
+      updateQualityStatus(filmQuality.value, quality);
       updateProgress();
       if (details.measuringConnection) {
         status.textContent = 'Preparing the best high-quality experience for your connection';

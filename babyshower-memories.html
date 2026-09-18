@@ -85,6 +85,15 @@
           />
           Your browser does not support embedded video.
         </video>
+        <div class="memories-film__quality">
+          <label for="film-quality">Video quality</label>
+          <select id="film-quality">
+            <option value="auto">Auto</option>
+            <option value="720p">720p</option>
+            <option value="1080p">1080p</option>
+          </select>
+          <span id="film-quality-status" aria-live="polite">Selecting the best quality...</span>
+        </div>
         <div class="memories-film__buffer" id="film-buffering" aria-live="polite" hidden>
           <span class="memories-film__buffer-ring" aria-hidden="true"></span>
           <p id="film-buffering-title">Opening our story...</p>
