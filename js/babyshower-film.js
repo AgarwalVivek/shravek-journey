@@ -12,6 +12,10 @@
     return 0;
   }
 
+  function getStartupBufferSeconds(quality, mobile) {
+    return mobile ? 6 : quality === '1080p' ? 12 : 10;
+  }
+
   async function measureBandwidthMbps(url) {
     const separator = url.includes('?') ? '&' : '?';
     const sampleBytes = 1024 * 1024;
@@ -41,7 +45,7 @@
     const constrainedType = /(^|-)2g|3g/.test(effectiveType || '');
 
     if (!hasLargeScreen || saveData || constrainedType) {
-      return { quality: '720p', bandwidthMbps: downlink || null };
+      return { quality: '720p', bandwidthMbps: downlink || null, mobile: !hasLargeScreen };
     }
 
     const measuredBandwidth = await measureBandwidthMbps(source.dataset.srcMobile);
@@ -51,18 +55,18 @@
       ? '1080p'
       : '720p';
 
-    return { quality, bandwidthMbps: estimatedBandwidth };
+    return { quality, bandwidthMbps: estimatedBandwidth, mobile: false };
   }
 
-  async function waitForStartupBuffer(video, quality, onProgress) {
-    const targetSeconds = quality === '1080p' ? 12 : 10;
+  async function waitForStartupBuffer(video, quality, mobile, onProgress) {
+    const targetSeconds = getStartupBufferSeconds(quality, mobile);
     const startedAt = performance.now();
     let previousBuffered = 0;
     let previousSampleAt = startedAt;
     let mediaSecondsPerSecond = 0;
 
     await new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => finish(), 30000);
+      const timeout = setTimeout(() => finish(), mobile ? 20000 : 30000);
       const interval = setInterval(report, 250);
 
       function cleanup() {
@@ -143,17 +147,20 @@
     if (!remoteUrl) throw new Error('The Baby Shower film URL is missing.');
 
     try {
+      const targetSeconds = getStartupBufferSeconds(quality, selection.mobile);
       video.dataset.quality = quality;
+      video.dataset.startupBufferSeconds = String(targetSeconds);
       onProgress(5, quality, {
         bufferedSeconds: 0,
-        targetSeconds: quality === '1080p' ? 12 : 10,
+        targetSeconds,
         etaSeconds: null,
-        bandwidthMbps: selection.bandwidthMbps
+        bandwidthMbps: selection.bandwidthMbps,
+        mobile: selection.mobile
       });
       source.src = remoteUrl;
       video.preload = 'auto';
       video.load();
-      await waitForStartupBuffer(video, quality, onProgress);
+      await waitForStartupBuffer(video, quality, selection.mobile, onProgress);
       return remoteUrl;
     } catch (error) {
       source.src = remoteUrl;

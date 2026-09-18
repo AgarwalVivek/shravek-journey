@@ -23,10 +23,10 @@
   let bufferingMessageIndex = 0;
   let preloaderMessageIndex = 0;
   const preloaderMessages = [
-    'A beautiful story is worth a little wait.',
+    'This high-quality film may take about a minute, or a little longer, to play smoothly on slower connections.',
     'The first smiles are coming into focus.',
     'Laughter, blessings, and happy tears are almost ready.',
-    'Stay with us—the film will begin automatically.'
+    'Stay with us—the film will begin automatically and continue loading as it plays.'
   ];
   const bufferingMessages = [
     ['Opening our story...', 'A little laughter, a few happy tears, and so much love.'],
@@ -58,7 +58,7 @@
   function updatePlaybackBuffer() {
     if (!filmBufferingStatus || !filmBufferingBar) return;
     const bufferedSeconds = window.BabyShowerFilm.getBufferedSeconds(film);
-    const targetSeconds = 10;
+    const targetSeconds = Number(film.dataset.startupBufferSeconds) || 10;
     const percentage = Math.min(100, Math.round((bufferedSeconds / targetSeconds) * 100));
     filmBufferingBar.style.width = `${percentage}%`;
     filmBufferingStatus.textContent = `${Math.floor(bufferedSeconds)} seconds ready · streaming smoothly`;
@@ -161,7 +161,9 @@
   });
 
   async function preloadMemories() {
-    const urls = [...new Set([filmPoster, ...photos.slice(0, 5).map(photo => photo.url)].filter(Boolean))];
+    const isMobile = window.matchMedia('(max-width: 900px)').matches;
+    const initialPhotoCount = isMobile ? 2 : 5;
+    const urls = [...new Set([filmPoster, ...photos.slice(0, initialPhotoCount).map(photo => photo.url)].filter(Boolean))];
     let completed = 0;
     let nextIndex = 0;
     let filmProgress = 0;
@@ -233,14 +235,14 @@
       filmProgress = percentage;
       updateProgress();
       if (details.measuringConnection) {
-        status.textContent = 'Finding the smoothest way to begin';
+        status.textContent = 'Preparing the best experience for your connection';
         return;
       }
       const buffered = Math.floor(details.bufferedSeconds);
       const eta = details.etaSeconds;
       status.textContent = eta === null
-        ? `A beautiful memory is worth a little wait · ${buffered}s ready`
-        : `Worth a little wait · about ${eta}s to go`;
+        ? `High-quality film · ${buffered}s ready · slower connections may take a minute or a little longer`
+        : `Worth a little wait · about ${eta} second${eta === 1 ? '' : 's'} to go`;
     }).catch(error => {
       console.error('Unable to preload the Baby Shower film.', error);
       filmProgress = 100;
