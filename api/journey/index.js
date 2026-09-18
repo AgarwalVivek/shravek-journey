@@ -805,8 +805,10 @@ async function handleSiteLogin(context, req) {
   const { username, password, page } = req.body || {};
   const babyShower = isBabyShowerPage(page);
   const config = babyShower ? getBabyShowerAccessConfig() : getSiteAccessConfig();
-  const authenticated = safeEqual(username || "", config.username) &&
-    safeEqual(password || "", config.password);
+  const normalizedUsername = String(username || "").trim().toLowerCase();
+  const normalizedPassword = String(password || "").trim();
+  const authenticated = safeEqual(normalizedUsername, config.username.trim().toLowerCase()) &&
+    safeEqual(normalizedPassword, config.password.trim());
 
   if (!authenticated) {
     context.res = {

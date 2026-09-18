@@ -41,7 +41,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username: document.getElementById('site-access-username').value.trim(),
-          password: document.getElementById('site-access-password').value,
+          password: document.getElementById('site-access-password').value.trim(),
           page: returnPath
         })
       });
