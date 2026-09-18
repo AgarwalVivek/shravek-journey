@@ -10,6 +10,7 @@ const BABY_SHOWER_CAMPAIGN_ID = "email-campaign_babyshower-memories-20260916";
 const BABY_SHOWER_EVENT_ID = "event_1778962966548_06mo";
 const BABY_SHOWER_MEMORIES_URL = "https://www.shravek.com/babyshower-memories.html";
 const BABY_SHOWER_POSTER_URL = "https://shravekjourneyphotos.blob.core.windows.net/photos/baby-shower-film/before-we-met-you-poster.webp?v=20260915";
+const BABY_SHOWER_SHARE_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
 
 function getContainer() {
   const connectionString = process.env.COSMOS_CONNECTION_STRING;
@@ -28,6 +29,7 @@ function getContainer() {
 }
 
 const SITE_ACCESS_COOKIE = "shravek_family_access";
+const BABY_SHOWER_SHARE_COOKIE = "shravek_babyshower_share";
 const SITE_ACCESS_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
 
 function getSiteAccessConfig() {
@@ -86,6 +88,58 @@ function verifySiteAccessToken(token, secret) {
 
 function siteAccessCookie(token, maxAge = SITE_ACCESS_MAX_AGE_SECONDS) {
   return `${SITE_ACCESS_COOKIE}=${token}; Max-Age=${maxAge}; Path=/; HttpOnly; Secure; SameSite=Lax`;
+}
+
+function createBabyShowerShareToken(secret) {
+  const expiresAt = Date.now() + (BABY_SHOWER_SHARE_MAX_AGE_SECONDS * 1000);
+  const payload = Buffer.from(JSON.stringify({
+    scope: "babyshower-memories",
+    nonce: crypto.randomBytes(16).toString("base64url"),
+    expiresAt
+  })).toString("base64url");
+  const signature = crypto.createHmac("sha256", secret).update(payload).digest("base64url");
+  return { token: `${payload}.${signature}`, expiresAt };
+}
+
+function verifyBabyShowerShareToken(token, secret) {
+  if (!token) return null;
+  const [payload, signature, extra] = token.split(".");
+  if (!payload || !signature || extra) return null;
+
+  const expectedSignature = crypto.createHmac("sha256", secret).update(payload).digest("base64url");
+  if (!safeEqual(signature, expectedSignature)) return null;
+
+  try {
+    const data = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+    return data.scope === "babyshower-memories" &&
+      typeof data.nonce === "string" &&
+      data.nonce.length >= 16 &&
+      data.expiresAt > Date.now()
+      ? data
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function babyShowerShareCookie(token, maxAge = BABY_SHOWER_SHARE_MAX_AGE_SECONDS) {
+  return `${BABY_SHOWER_SHARE_COOKIE}=${token}; Max-Age=${maxAge}; Path=/; HttpOnly; Secure; SameSite=Lax`;
+}
+
+async function createBabyShowerShareUrl(container, secret, recipientEmail, createdBy) {
+  const { token, expiresAt } = createBabyShowerShareToken(secret);
+  const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+  await container.items.create({
+    id: `video-share_${tokenHash}`,
+    category: "video-share",
+    scope: "babyshower-memories",
+    recipientEmail: recipientEmail,
+    createdBy,
+    createdAt: new Date().toISOString(),
+    expiresAt: new Date(expiresAt).toISOString(),
+    usedAt: null
+  });
+  return `https://www.shravek.com/api/journey/shared-access?token=${encodeURIComponent(token)}`;
 }
 
 // Email helper using Azure Communication Services
@@ -165,16 +219,17 @@ async function requireAdmin(context, req) {
   return resources[0];
 }
 
-function buildBabyShowerAnnouncement(recipientName) {
+function buildBabyShowerAnnouncement(recipientName, accessUrl = BABY_SHOWER_MEMORIES_URL) {
   const safeName = escapeHtml(recipientName || "Friend");
   const greetingName = safeName.split(/\s+/)[0] || "Friend";
+  const safeAccessUrl = escapeHtml(accessUrl);
   const subject = "Our Baby Shower Film & Photos Are Here 🎀";
   const plainText = `Hi ${recipientName || "Friend"},
 
 Our Baby Shower film and complete photo album are ready.
 
 Watch "Before We Met You" and explore the Tiny Toes & Pretty Bows memories:
-${BABY_SHOWER_MEMORIES_URL}
+${accessUrl}
 
 Thank you for filling that beautiful day with your love and blessings.
 
@@ -190,7 +245,7 @@ Vivek & Shraddha`;
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;overflow:hidden;background:#ffffff;border-radius:14px;box-shadow:0 12px 40px rgba(54,31,42,.12)">
                 <tr>
                   <td style="height:310px;background:#23171d url('${BABY_SHOWER_POSTER_URL}') center/cover no-repeat;text-align:center;vertical-align:middle">
-                    <a href="${BABY_SHOWER_MEMORIES_URL}" style="display:inline-block;width:72px;height:72px;border:2px solid #fff;border-radius:50%;color:#fff;background:rgba(27,20,24,.55);font-size:28px;line-height:72px;text-decoration:none;padding-left:4px">▶</a>
+                    <a href="${safeAccessUrl}" style="display:inline-block;width:72px;height:72px;border:2px solid #fff;border-radius:50%;color:#fff;background:rgba(27,20,24,.55);font-size:28px;line-height:72px;text-decoration:none;padding-left:4px">▶</a>
                   </td>
                 </tr>
                 <tr>
@@ -200,7 +255,8 @@ Vivek & Shraddha`;
                     <p style="margin:10px 0 24px;color:#8d6876;font-family:Georgia,serif;font-size:19px;font-style:italic">Our Baby Shower film &amp; complete album</p>
                     <p style="margin:0 0 18px;color:#4d3c43;font-size:16px;line-height:1.7">Hi ${greetingName},</p>
                     <p style="margin:0 0 28px;color:#67555d;font-size:15px;line-height:1.75">The film and photographs from our celebration are ready. Thank you for filling that beautiful day with laughter, blessings, and so much love for our little one.</p>
-                    <a href="${BABY_SHOWER_MEMORIES_URL}" style="display:inline-block;padding:15px 26px;border-radius:999px;color:#fff;background:#a95773;font-size:12px;font-weight:bold;letter-spacing:1.4px;text-decoration:none;text-transform:uppercase">Watch the Film &amp; Explore Memories</a>
+                    <a href="${safeAccessUrl}" style="display:inline-block;padding:15px 26px;border-radius:999px;color:#fff;background:#a95773;font-size:12px;font-weight:bold;letter-spacing:1.4px;text-decoration:none;text-transform:uppercase">Watch the Film &amp; Explore Memories</a>
+                    <p style="margin:16px 0 0;color:#a38c95;font-size:12px;line-height:1.5">This private, single-use link signs you in automatically and expires in seven days.</p>
                     <p style="margin:30px 0 0;color:#a38c95;font-family:Georgia,serif;font-size:16px;font-style:italic;line-height:1.6">With love,<br><strong style="color:#8f4c63">Vivek &amp; Shraddha</strong></p>
                   </td>
                 </tr>
@@ -345,6 +401,10 @@ module.exports = async function (context, req) {
 
       case "site-auth":
         if (req.method === "GET") return await handleSiteAuth(context, req);
+        break;
+
+      case "shared-access":
+        if (req.method === "GET" || req.method === "POST") return await handleSharedAccess(context, req);
         break;
 
       case "site-logout":
@@ -779,8 +839,13 @@ async function handleSiteLogin(context, req) {
 
 async function handleSiteAuth(context, req) {
   const config = getSiteAccessConfig();
-  const token = getCookies(req)[SITE_ACCESS_COOKIE];
-  const authenticated = verifySiteAccessToken(token, config.secret);
+  const cookies = getCookies(req);
+  const token = cookies[SITE_ACCESS_COOKIE];
+  const page = String((req.query && req.query.page) || "");
+  const familyAuthenticated = verifySiteAccessToken(token, config.secret);
+  const shareAuthenticated = page === "/babyshower-memories.html" &&
+    Boolean(verifyBabyShowerShareToken(cookies[BABY_SHOWER_SHARE_COOKIE], config.secret));
+  const authenticated = familyAuthenticated || shareAuthenticated;
 
   context.res = {
     status: authenticated ? 200 : 401,
@@ -789,6 +854,120 @@ async function handleSiteAuth(context, req) {
       "Cache-Control": "no-store"
     },
     body: JSON.stringify({ success: authenticated, authenticated })
+  };
+}
+
+async function handleSharedAccess(context, req) {
+  const config = getSiteAccessConfig();
+  const shareToken = String((req.query && req.query.token) || "");
+  const sharePayload = verifyBabyShowerShareToken(shareToken, config.secret);
+  const existingShareToken = getCookies(req)[BABY_SHOWER_SHARE_COOKIE] || "";
+  const tokenHash = sharePayload
+    ? crypto.createHash("sha256").update(shareToken).digest("hex")
+    : "";
+  const container = getContainer();
+  let shareRecord;
+
+  if (sharePayload) {
+    try {
+      const response = await container.item(`video-share_${tokenHash}`, "video-share").read();
+      shareRecord = response.resource;
+    } catch (error) {
+      if (error.code !== 404 && error.statusCode !== 404) throw error;
+    }
+  }
+
+  const reusedByOriginalBrowser = shareRecord && shareRecord.usedAt &&
+    safeEqual(existingShareToken, shareToken);
+  const invalidShare = !shareRecord ||
+    (shareRecord.usedAt && !reusedByOriginalBrowser) ||
+    Date.parse((shareRecord && shareRecord.expiresAt) || "") <= Date.now();
+  if (invalidShare) {
+    context.res = {
+      status: 302,
+      headers: {
+        "Cache-Control": "no-store",
+        "Location": "/access?return=%2Fbabyshower-memories.html%23film"
+      }
+    };
+    return;
+  }
+
+  if (reusedByOriginalBrowser) {
+    context.res = {
+      status: 302,
+      headers: {
+        "Cache-Control": "no-store",
+        "Location": "/babyshower-memories.html#film"
+      }
+    };
+    return;
+  }
+
+  if (req.method === "GET") {
+    const formAction = `/api/journey/shared-access?token=${encodeURIComponent(shareToken)}`;
+    context.res = {
+      status: 200,
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store",
+        "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"
+      },
+      body: `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Your private Baby Shower film</title>
+</head>
+<body style="margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;box-sizing:border-box;background:#1c1418;color:#fff;font-family:Arial,sans-serif;text-align:center">
+  <main style="width:min(480px,100%);padding:48px 32px;border:1px solid rgba(255,255,255,.14);border-radius:18px;background:rgba(255,255,255,.06)">
+    <p style="margin:0 0 12px;color:#f0b8ca;font-size:12px;letter-spacing:2px;text-transform:uppercase">Tiny Toes &amp; Pretty Bows</p>
+    <h1 style="margin:0 0 16px;font-family:Georgia,serif;font-size:42px;font-weight:normal">Before We Met You</h1>
+    <p style="margin:0 0 28px;color:rgba(255,255,255,.72);line-height:1.6">Your private film is ready. This link works only for the first browser that opens it.</p>
+    <form method="post" action="${escapeHtml(formAction)}">
+      <button type="submit" style="border:0;border-radius:999px;padding:15px 28px;background:#b96580;color:#fff;font-size:13px;font-weight:bold;letter-spacing:1px;cursor:pointer">Watch the film</button>
+    </form>
+  </main>
+</body>
+</html>`
+    };
+    return;
+  }
+
+  if (!shareRecord.usedAt) {
+    try {
+      await container
+        .item(shareRecord.id, "video-share")
+        .replace({
+          ...shareRecord,
+          usedAt: new Date().toISOString()
+        }, {
+          accessCondition: { type: "IfMatch", condition: shareRecord._etag }
+        });
+    } catch (error) {
+      if (error.code === 412 || error.statusCode === 412) {
+        context.res = {
+          status: 302,
+          headers: {
+            "Cache-Control": "no-store",
+            "Location": "/access?return=%2Fbabyshower-memories.html%23film"
+          }
+        };
+        return;
+      }
+      throw error;
+    }
+  }
+
+  context.res = {
+    status: 302,
+    headers: {
+      "Cache-Control": "no-store",
+      "Location": "/babyshower-memories.html#film",
+      "Set-Cookie": babyShowerShareCookie(shareToken)
+    }
   };
 }
 
@@ -1062,7 +1241,9 @@ async function handleEmailCampaign(context, req) {
       return;
     }
 
-    const message = buildBabyShowerAnnouncement(body.testName || "Friend");
+    const config = getSiteAccessConfig();
+    const accessUrl = await createBabyShowerShareUrl(container, config.secret, testEmail, admin.username);
+    const message = buildBabyShowerAnnouncement(body.testName || "Friend", accessUrl);
     const result = await sendEmail({ to: testEmail, ...message });
     context.res = {
       status: 200,
@@ -1072,11 +1253,34 @@ async function handleEmailCampaign(context, req) {
     return;
   }
 
+  if (mode === "share") {
+    const shareEmail = String(body.email || "").trim().toLowerCase();
+    if (!isValidEmail(shareEmail)) {
+      context.res = {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ success: false, error: "Enter a valid recipient email address." })
+      };
+      return;
+    }
+
+    const config = getSiteAccessConfig();
+    const accessUrl = await createBabyShowerShareUrl(container, config.secret, shareEmail, admin.username);
+    const message = buildBabyShowerAnnouncement(body.name || "Friend", accessUrl);
+    const result = await sendEmail({ to: shareEmail, ...message });
+    context.res = {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ success: true, mode: "share", status: result.status })
+    };
+    return;
+  }
+
   if (mode !== "send") {
     context.res = {
       status: 400,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ success: false, error: "Mode must be test or send." })
+      body: JSON.stringify({ success: false, error: "Mode must be test, share, or send." })
     };
     return;
   }
@@ -1151,7 +1355,9 @@ async function handleEmailCampaign(context, req) {
   }
 
   const results = await runWithConcurrency(pendingRecipients, 3, async recipient => {
-    const message = buildBabyShowerAnnouncement(recipient.name);
+    const config = getSiteAccessConfig();
+    const accessUrl = await createBabyShowerShareUrl(container, config.secret, recipient.email, admin.username);
+    const message = buildBabyShowerAnnouncement(recipient.name, accessUrl);
     const result = await sendEmail({ to: recipient.email, ...message });
     return { email: recipient.email, status: result.status };
   });

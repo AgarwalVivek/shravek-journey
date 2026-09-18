@@ -95,8 +95,8 @@
       nav: 'Portraits',
       number: 'Studio',
       date: 'August 2026',
-      title: 'Baby Portrait Studio',
-      description: 'A playful collection of studio-inspired portraits, tiny expressions, and sweet little details from this beautiful new chapter.'
+      title: "Avika's Portrait Studio",
+      description: "A playful collection of Avika's studio portraits, tiny expressions, and sweet little details from this beautiful new chapter."
     }
   ];
 
@@ -246,7 +246,7 @@
       },
       'baby-portraits': {
         href: 'babyphotoshoot',
-        label: `Explore all ${items.length} Baby Portrait Studio images`
+        label: `Explore all ${items.length} portraits from Avika's studio`
       }
     };
     const dedicatedPage = dedicatedPages[chapterId];

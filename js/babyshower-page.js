@@ -6,7 +6,7 @@
   const status = document.getElementById('babyshower-film-load-status');
   const video = document.getElementById('baby-shower-film-player');
   const smoothProgress = window.createSmoothProgress(progressBar, percentage => {
-    status.textContent = `Loading our film · ${percentage}%`;
+    status.textContent = `A beautiful memory is worth a little wait · ${percentage}%`;
   });
 
   function revealPage() {
@@ -15,9 +15,9 @@
     setTimeout(() => preloader.remove(), 700);
   }
 
-  window.BabyShowerFilm.preload(video, (percentage, quality) => {
+  window.BabyShowerFilm.preload(video, percentage => {
     smoothProgress.set(percentage);
-    if (quality) status.textContent = `Preparing the ${quality} film · ${percentage}%`;
+    status.textContent = `Worth a little wait · ${percentage}% ready`;
   }).then(async () => {
     await smoothProgress.complete();
     status.textContent = 'Our film is ready';

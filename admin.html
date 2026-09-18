@@ -397,6 +397,23 @@
           </div>
           <p id="email-send-status" style="font-size:0.82rem;margin-top:1rem"></p>
         </div>
+
+        <div class="admin-card" style="margin-top:2rem">
+          <h3 class="admin-card__title">Share the Video Privately</h3>
+          <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem">Send one person a single-use private link that signs them in automatically and opens only the embedded Baby Shower film page. Pregnancy Journey and every other private page still require the family username and password.</p>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Recipient Email Address</label>
+              <input type="email" id="video-share-email" placeholder="friend@example.com" />
+            </div>
+            <div class="form-group">
+              <label>Recipient Name</label>
+              <input type="text" id="video-share-name" placeholder="Friend" />
+            </div>
+          </div>
+          <button type="button" class="btn btn--dark" id="video-share-send" style="width:auto;padding:0.65rem 1.25rem;margin-top:1rem" onclick="sendPrivateVideoLink()">Send Private Video Link</button>
+          <p id="video-share-status" style="font-size:0.82rem;margin-top:1rem"></p>
+        </div>
       </section>
 
       <!-- SETTINGS TAB -->

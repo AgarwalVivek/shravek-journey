@@ -6,6 +6,7 @@
   const preloader = document.getElementById('memories-preloader');
   const progressBar = document.getElementById('memories-load-bar');
   const status = document.getElementById('memories-load-status');
+  const preloaderNote = document.getElementById('memories-load-note');
   const gallery = document.getElementById('babyshower-gallery');
   const film = document.getElementById('baby-shower-film-player');
   const filmBuffering = document.getElementById('film-buffering');
@@ -20,11 +21,22 @@
   let activeIndex = 0;
   let bufferingMessageTimer;
   let bufferingMessageIndex = 0;
+  let preloaderMessageIndex = 0;
+  const preloaderMessages = [
+    'A beautiful story is worth a little wait.',
+    'The first smiles are coming into focus.',
+    'Laughter, blessings, and happy tears are almost ready.',
+    'Stay with us—the film will begin automatically.'
+  ];
   const bufferingMessages = [
     ['Opening our story...', 'A little laughter, a few happy tears, and so much love.'],
     ['Bringing the celebration to life...', 'The first moments are almost here.'],
     ['Just a little longer...', 'Some memories are worth waiting a heartbeat for.']
   ];
+  const preloaderMessageTimer = setInterval(() => {
+    preloaderMessageIndex = (preloaderMessageIndex + 1) % preloaderMessages.length;
+    preloaderNote.textContent = preloaderMessages[preloaderMessageIndex];
+  }, 2800);
 
   function showFilmBuffering() {
     if (!filmBuffering || film.paused || film.ended) return;
@@ -49,7 +61,7 @@
     const targetSeconds = 10;
     const percentage = Math.min(100, Math.round((bufferedSeconds / targetSeconds) * 100));
     filmBufferingBar.style.width = `${percentage}%`;
-    filmBufferingStatus.textContent = `${Math.floor(bufferedSeconds)} seconds ready · ${film.dataset.quality || 'HD'} streaming`;
+    filmBufferingStatus.textContent = `${Math.floor(bufferedSeconds)} seconds ready · streaming smoothly`;
   }
 
   film.addEventListener('play', () => {
@@ -221,14 +233,14 @@
       filmProgress = percentage;
       updateProgress();
       if (details.measuringConnection) {
-        status.textContent = 'Checking your connection for the best HD quality';
+        status.textContent = 'Finding the smoothest way to begin';
         return;
       }
       const buffered = Math.floor(details.bufferedSeconds);
       const eta = details.etaSeconds;
       status.textContent = eta === null
-        ? `Preparing ${quality} streaming · ${buffered}s buffered`
-        : `Preparing ${quality} streaming · about ${eta}s remaining`;
+        ? `A beautiful memory is worth a little wait · ${buffered}s ready`
+        : `Worth a little wait · about ${eta}s to go`;
     }).catch(error => {
       console.error('Unable to preload the Baby Shower film.', error);
       filmProgress = 100;
@@ -240,6 +252,7 @@
     ]);
     await smoothProgress.complete();
     renderGallery();
+    clearInterval(preloaderMessageTimer);
     status.textContent = 'Your story is ready';
     await new Promise(resolve => setTimeout(resolve, 250));
     document.documentElement.classList.remove('babyshower-memories-loading');

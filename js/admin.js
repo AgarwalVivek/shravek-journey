@@ -117,6 +117,42 @@
     }
   };
 
+  window.sendPrivateVideoLink = async function () {
+    const email = document.getElementById('video-share-email').value.trim();
+    const name = document.getElementById('video-share-name').value.trim();
+    const status = document.getElementById('video-share-status');
+    const button = document.getElementById('video-share-send');
+
+    if (!email) {
+      status.textContent = 'Enter the recipient email address.';
+      status.style.color = '#991b1b';
+      return;
+    }
+
+    button.disabled = true;
+    status.textContent = 'Creating the private link and sending email...';
+    status.style.color = 'var(--muted)';
+
+    try {
+      const response = await fetch(API + '/email-campaign', {
+        method: 'POST',
+        headers: adminHeaders(),
+        body: JSON.stringify({ mode: 'share', email, name })
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error || 'Private video link could not be sent.');
+      status.textContent = `Private video link sent to ${email}.`;
+      status.style.color = '#2a7c4f';
+      document.getElementById('video-share-email').value = '';
+      document.getElementById('video-share-name').value = '';
+    } catch (error) {
+      status.textContent = error.message;
+      status.style.color = '#991b1b';
+    } finally {
+      button.disabled = false;
+    }
+  };
+
   window.sendParticipantCampaign = async function () {
     const status = document.getElementById('email-send-status');
     const pendingCount = currentEmailCampaign && currentEmailCampaign.pendingCount;

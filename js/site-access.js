@@ -8,7 +8,7 @@
 
   const returnTo = `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
-  fetch('/api/journey/site-auth', {
+  fetch(`/api/journey/site-auth?page=${encodeURIComponent(window.location.pathname)}`, {
     credentials: 'same-origin',
     cache: 'no-store'
   }).then(response => {
