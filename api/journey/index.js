@@ -248,6 +248,23 @@ Vivek & Shraddha`;
   return { subject, plainText, htmlBody };
 }
 
+function buildBabyShowerWhatsAppMessage(recipientName, credentials) {
+  const name = String(recipientName || "").trim();
+  const greeting = name ? `Hi ${name.split(/\s+/)[0]}!` : "Hi!";
+  return `${greeting}
+
+Our Baby Shower film and complete photo album are ready:
+${BABY_SHOWER_MEMORIES_URL}
+
+Username: ${credentials.username}
+Password: ${credentials.password}
+
+This is a high-quality video, so it may take a little time to render and load. Please stay until the end—you may spot yourself or someone you know in the film.
+
+With love,
+Vivek & Shraddha`;
+}
+
 async function getBabyShowerEmailRecipients() {
   const container = getContainer();
   const { resources } = await container.items
@@ -1122,6 +1139,22 @@ async function handleEmailCampaign(context, req) {
   const body = req.body || {};
   const mode = String(body.mode || "").toLowerCase();
 
+  if (mode === "whatsapp") {
+    context.res = {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store"
+      },
+      body: JSON.stringify({
+        success: true,
+        mode: "whatsapp",
+        message: buildBabyShowerWhatsAppMessage(body.name, babyShowerAccess)
+      })
+    };
+    return;
+  }
+
   if (mode === "test") {
     const testEmail = String(body.testEmail || "").trim().toLowerCase();
     if (!isValidEmail(testEmail)) {
@@ -1168,7 +1201,7 @@ async function handleEmailCampaign(context, req) {
     context.res = {
       status: 400,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ success: false, error: "Mode must be test, share, or send." })
+      body: JSON.stringify({ success: false, error: "Mode must be test, share, whatsapp, or send." })
     };
     return;
   }

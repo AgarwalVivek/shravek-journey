@@ -411,7 +411,10 @@
               <input type="text" id="video-share-name" placeholder="Friend" />
             </div>
           </div>
-          <button type="button" class="btn btn--dark" id="video-share-send" style="width:auto;padding:0.65rem 1.25rem;margin-top:1rem" onclick="sendPrivateVideoLink()">Send Private Video Link</button>
+          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1rem">
+            <button type="button" class="btn btn--dark" id="video-share-send" style="width:auto;padding:0.65rem 1.25rem" onclick="sendPrivateVideoLink()">Send by Email</button>
+            <button type="button" class="btn" id="video-share-whatsapp" style="width:auto;padding:0.65rem 1.25rem;background:#25d366;color:#fff;border-color:#25d366" onclick="shareVideoOnWhatsApp()">Share through WhatsApp</button>
+          </div>
           <p id="video-share-status" style="font-size:0.82rem;margin-top:1rem"></p>
         </div>
       </section>

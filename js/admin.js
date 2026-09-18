@@ -153,6 +153,46 @@
     }
   };
 
+  window.shareVideoOnWhatsApp = async function () {
+    const name = document.getElementById('video-share-name').value.trim();
+    const status = document.getElementById('video-share-status');
+    const button = document.getElementById('video-share-whatsapp');
+    const whatsappWindow = window.open('about:blank', '_blank');
+
+    if (!whatsappWindow) {
+      status.textContent = 'Allow pop-ups for this page, then try WhatsApp again.';
+      status.style.color = '#991b1b';
+      return;
+    }
+
+    whatsappWindow.opener = null;
+    whatsappWindow.document.body.textContent = 'Preparing WhatsApp...';
+    button.disabled = true;
+    status.textContent = 'Preparing the WhatsApp invitation...';
+    status.style.color = 'var(--muted)';
+
+    try {
+      const response = await fetch(API + '/email-campaign', {
+        method: 'POST',
+        headers: adminHeaders(),
+        body: JSON.stringify({ mode: 'whatsapp', name })
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success || !data.message) {
+        throw new Error(data.error || 'WhatsApp invitation could not be prepared.');
+      }
+      whatsappWindow.location.replace(`https://wa.me/?text=${encodeURIComponent(data.message)}`);
+      status.textContent = 'WhatsApp opened with the invitation ready to send.';
+      status.style.color = '#2a7c4f';
+    } catch (error) {
+      whatsappWindow.close();
+      status.textContent = error.message;
+      status.style.color = '#991b1b';
+    } finally {
+      button.disabled = false;
+    }
+  };
+
   window.sendParticipantCampaign = async function () {
     const status = document.getElementById('email-send-status');
     const pendingCount = currentEmailCampaign && currentEmailCampaign.pendingCount;

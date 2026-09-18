@@ -51,7 +51,8 @@ All HTML pages except `babyphotoshoot.html` use the access gate in
 private pages use `SITE_ACCESS_USERNAME` and `SITE_ACCESS_PASSWORD`.
 `SITE_ACCESS_SECRET` signs the separate seven-day HttpOnly login cookies.
 Baby Shower sharing sends the normal page URL and its username/password rather
-than creating a signed, single-use URL.
+than creating a signed, single-use URL. Admins can send the prepared invitation
+by email or open it directly in WhatsApp.
 
 ## Tech Stack
 
