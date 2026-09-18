@@ -95,7 +95,7 @@
       nav: 'Portraits',
       number: 'Studio',
       date: 'August 2026',
-      title: "Avika's Portrait Studio",
+      title: 'Baby Portrait Studio',
       description: "A playful collection of Avika's studio portraits, tiny expressions, and sweet little details from this beautiful new chapter."
     }
   ];

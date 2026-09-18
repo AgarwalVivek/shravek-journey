@@ -78,7 +78,7 @@
   document.getElementById('share-portraits').addEventListener('click', async () => {
     const status = document.getElementById('portrait-share-status');
     const shareData = {
-      title: "Avika's Portrait Studio — Shravek",
+      title: "Baby Portrait Studio — Avika",
       text: "Explore Avika's complete portrait collection.",
       url: window.location.href
     };
