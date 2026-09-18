@@ -37,6 +37,10 @@
   }
 
   async function chooseQuality(source) {
+    if (source.dataset.srcDesktop === source.dataset.srcMobile) {
+      return { quality: '720p', bandwidthMbps: null, mobile: !window.matchMedia('(min-width: 901px)').matches };
+    }
+
     const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
     const hasLargeScreen = window.matchMedia('(min-width: 901px)').matches;
     const saveData = Boolean(connection && connection.saveData);
