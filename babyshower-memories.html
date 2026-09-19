@@ -13,8 +13,9 @@
   <meta property="og:image" content="https://shravekjourneyphotos.blob.core.windows.net/photos/baby-shower-film/before-we-met-you-poster.webp?v=20260915" />
   <meta property="og:url" content="https://www.shravek.com/babyshower-memories.html" />
   <meta property="og:type" content="video.other" />
-  <meta property="og:video" content="https://shravekjourneyphotos.blob.core.windows.net/photos/baby-shower-film/final-babyshower-1080p-seekable-20260918.mp4" />
-  <meta property="og:video:type" content="video/mp4" />
+  <meta property="og:video" content="https://www.youtube.com/embed/Ifg8JcG7wEM" />
+  <meta property="og:video:secure_url" content="https://www.youtube.com/embed/Ifg8JcG7wEM" />
+  <meta property="og:video:type" content="text/html" />
   <meta property="og:video:width" content="1440" />
   <meta property="og:video:height" content="1080" />
   <title>Before We Met You — Baby Shower Memories</title>
@@ -22,6 +23,8 @@
   <link rel="icon" type="image/png" href="images/favicon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://shravekjourneyphotos.blob.core.windows.net" crossorigin />
+  <link rel="preconnect" href="https://www.youtube-nocookie.com" />
+  <link rel="preconnect" href="https://i.ytimg.com" />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/babyshower-memories.css" />
@@ -36,7 +39,7 @@
         <span id="memories-load-bar"></span>
       </div>
       <p class="memories-preloader__status" id="memories-load-status">Preparing our story</p>
-      <p class="memories-preloader__note" id="memories-load-note">This high-quality film is being rendered for your screen, so it may take a little time to load. Please stay until the end—you may spot yourself in the film.</p>
+      <p class="memories-preloader__note" id="memories-load-note">Gathering the photographs and moments that made the celebration unforgettable.</p>
     </div>
   </div>
 
@@ -55,7 +58,7 @@
         <h1>Before We Met You</h1>
         <p class="memories-hero__subtitle">The Tiny Toes &amp; Pretty Bows Baby Shower Film</p>
         <p class="memories-hero__description">A room full of laughter, blessings, happy tears, and love for the little one we could not wait to meet.</p>
-        <p class="memories-hero__description"><strong>High-quality viewing:</strong> The video may take a little time to render and load. Please stay until the end—you may spot yourself or someone you know in the film.</p>
+        <p class="memories-hero__description">Watch until the end—you may spot yourself or someone you know in the film.</p>
         <div class="memories-hero__actions">
           <a href="#film" class="memories-button memories-button--primary">Watch the Film</a>
           <button class="memories-button memories-button--outline" id="share-memories" type="button">Share This Page</button>
@@ -70,38 +73,19 @@
         <h2 id="film-title">Our celebration, in motion</h2>
       </div>
       <div class="memories-film__player">
-        <video
-          id="baby-shower-film-player"
-          controls
-          playsinline
-          preload="none"
-          poster="https://shravekjourneyphotos.blob.core.windows.net/photos/baby-shower-film/before-we-met-you-poster.webp?v=20260915"
-          aria-label="Watch Before We Met You, our Baby Shower short film"
-        >
-          <source
-            data-src-mobile="https://shravekjourneyphotos.blob.core.windows.net/photos/baby-shower-film/final-babyshower-720p-seekable-20260918.mp4"
-            data-src-desktop="https://shravekjourneyphotos.blob.core.windows.net/photos/baby-shower-film/final-babyshower-1080p-seekable-20260918.mp4"
-            type="video/mp4"
-          />
-          Your browser does not support embedded video.
-        </video>
-        <div class="memories-film__quality">
-          <label for="film-quality">Video quality</label>
-          <select id="film-quality">
-            <option value="auto">Auto</option>
-            <option value="720p">720p</option>
-            <option value="1080p">1080p</option>
-          </select>
-          <span id="film-quality-status" aria-live="polite">Selecting the best quality...</span>
+        <div class="memories-film__embed">
+          <iframe
+            src="https://www.youtube-nocookie.com/embed/Ifg8JcG7wEM?playsinline=1&rel=0"
+            title="Shraddha's Baby Shower"
+            loading="lazy"
+            referrerpolicy="strict-origin-when-cross-origin"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen
+          ></iframe>
         </div>
-        <div class="memories-film__buffer" id="film-buffering" aria-live="polite" hidden>
-          <span class="memories-film__buffer-ring" aria-hidden="true"></span>
-          <p id="film-buffering-title">Opening our story...</p>
-          <small id="film-buffering-note">Please stay with us—you may spot yourself or someone you know in the film.</small>
-          <div class="memories-film__buffer-track" aria-hidden="true">
-            <span id="film-buffering-bar"></span>
-          </div>
-          <small class="memories-film__buffer-status" id="film-buffering-status"></small>
+        <div class="memories-film__actions">
+          <span>YouTube automatically adjusts playback quality for your connection.</span>
+          <a href="https://youtu.be/Ifg8JcG7wEM" target="_blank" rel="noopener noreferrer">Watch on YouTube</a>
         </div>
       </div>
     </section>
@@ -131,7 +115,6 @@
 
   <script src="js/pregnancy-media.js"></script>
   <script src="js/smooth-progress.js"></script>
-  <script src="js/babyshower-film.js"></script>
   <script src="js/babyshower-memories.js"></script>
 </body>
 </html>

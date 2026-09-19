@@ -2,27 +2,16 @@
   'use strict';
 
   const photos = (window.PREGNANCY_MEDIA && window.PREGNANCY_MEDIA['month-7']) || [];
-  const filmPoster = 'https://shravekjourneyphotos.blob.core.windows.net/photos/baby-shower-film/before-we-met-you-poster.webp?v=20260915';
   const preloader = document.getElementById('memories-preloader');
   const progressBar = document.getElementById('memories-load-bar');
   const status = document.getElementById('memories-load-status');
   const preloaderNote = document.getElementById('memories-load-note');
   const gallery = document.getElementById('babyshower-gallery');
-  const film = document.getElementById('baby-shower-film-player');
-  const filmBuffering = document.getElementById('film-buffering');
-  const filmBufferingTitle = document.getElementById('film-buffering-title');
-  const filmBufferingNote = document.getElementById('film-buffering-note');
-  const filmBufferingBar = document.getElementById('film-buffering-bar');
-  const filmBufferingStatus = document.getElementById('film-buffering-status');
-  const filmQuality = document.getElementById('film-quality');
-  const filmQualityStatus = document.getElementById('film-quality-status');
   const lightbox = document.getElementById('memories-lightbox');
   const lightboxImage = lightbox.querySelector('.memories-lightbox__image');
   const lightboxCounter = lightbox.querySelector('.memories-lightbox__counter');
   const smoothProgress = window.createSmoothProgress(progressBar);
   let activeIndex = 0;
-  let bufferingMessageTimer;
-  let bufferingMessageIndex = 0;
   let preloaderMessageIndex = 0;
   const loadingActions = [
     'Polishing',
@@ -56,158 +45,9 @@
     return `${action} ${moment}... Please stay until the end—you may see yourself in the film.`;
   }
 
-  const bufferingMessages = [
-    ['Opening our story...', 'Stay with us—you may spot yourself in the next scene.'],
-    ['Bringing the celebration to life...', 'Every familiar face is worth waiting for.'],
-    ['Rendering the next moments...', 'The high-quality film will continue as soon as enough is ready.'],
-    ['Gathering smiles and laughter...', 'Your moment may be coming up—please watch until the end.'],
-    ['Preparing more memories...', 'The film includes candid moments from across the celebration.'],
-    ['Almost back to the celebration...', 'Please hold on while the next high-quality scene loads.'],
-    ['Finding the next familiar faces...', 'Someone you know—or you—may appear next.'],
-    ['Keeping the film crisp and clear...', 'A little wait helps the video play more smoothly.']
-  ];
   const preloaderMessageTimer = setInterval(() => {
     preloaderNote.textContent = nextEngagementMessage();
   }, 2800);
-
-  function showFilmBuffering() {
-    if (!filmBuffering || film.paused || film.ended) return;
-    filmBuffering.hidden = false;
-    updatePlaybackBuffer();
-    clearInterval(bufferingMessageTimer);
-    bufferingMessageTimer = setInterval(() => {
-      bufferingMessageIndex = (bufferingMessageIndex + 1) % bufferingMessages.length;
-      [filmBufferingTitle.textContent, filmBufferingNote.textContent] = bufferingMessages[bufferingMessageIndex];
-    }, 2600);
-  }
-
-  function hideFilmBuffering() {
-    if (!filmBuffering) return;
-    filmBuffering.hidden = true;
-    clearInterval(bufferingMessageTimer);
-  }
-
-  function qualityUrl(quality) {
-    const source = film.querySelector('source');
-    return quality === '1080p' ? source.dataset.srcDesktop : source.dataset.srcMobile;
-  }
-
-  function updateQualityStatus(selectedQuality, activeQuality) {
-    filmQualityStatus.textContent = selectedQuality === 'auto'
-      ? `Auto selected ${activeQuality}`
-      : `${activeQuality} selected`;
-  }
-
-  function waitForMediaEvent(eventNames, timeoutMs = 20000) {
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => finish(new Error('The selected video quality took too long to load.')), timeoutMs);
-
-      function cleanup() {
-        clearTimeout(timeout);
-        eventNames.forEach(eventName => film.removeEventListener(eventName, handleSuccess));
-        film.removeEventListener('error', handleError);
-      }
-
-      function finish(error) {
-        cleanup();
-        if (error) reject(error);
-        else resolve();
-      }
-
-      function handleSuccess() {
-        finish();
-      }
-
-      function handleError() {
-        finish(new Error('The selected video quality could not be loaded.'));
-      }
-
-      eventNames.forEach(eventName => film.addEventListener(eventName, handleSuccess, { once: true }));
-      film.addEventListener('error', handleError, { once: true });
-    });
-  }
-
-  async function changeFilmQuality(selectedQuality) {
-    const source = film.querySelector('source');
-    filmQuality.disabled = true;
-    filmQualityStatus.textContent = 'Switching quality...';
-
-    try {
-      const selection = selectedQuality === 'auto'
-        ? await window.BabyShowerFilm.chooseQuality(source)
-        : { quality: selectedQuality };
-      const activeQuality = selection.quality;
-
-      if (film.dataset.quality === activeQuality) {
-        updateQualityStatus(selectedQuality, activeQuality);
-        return;
-      }
-
-      const currentTime = film.currentTime;
-      const shouldResume = !film.paused && !film.ended;
-      const volume = film.volume;
-      const muted = film.muted;
-      const playbackRate = film.playbackRate;
-
-      filmBuffering.hidden = false;
-      filmBufferingTitle.textContent = `Switching to ${activeQuality}...`;
-      filmBufferingNote.textContent = 'Keeping your place in the film.';
-      source.src = qualityUrl(activeQuality);
-      film.dataset.quality = activeQuality;
-      film.load();
-      await waitForMediaEvent(['loadedmetadata']);
-
-      if (currentTime > 0 && Number.isFinite(film.duration)) {
-        const seekReady = waitForMediaEvent(['seeked', 'canplay']);
-        film.currentTime = Math.min(currentTime, Math.max(0, film.duration - 0.1));
-        await seekReady;
-      } else if (film.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) {
-        await waitForMediaEvent(['canplay']);
-      }
-
-      film.volume = volume;
-      film.muted = muted;
-      film.playbackRate = playbackRate;
-      hideFilmBuffering();
-      updateQualityStatus(selectedQuality, activeQuality);
-
-      if (shouldResume) {
-        try {
-          await film.play();
-        } catch {
-          filmQualityStatus.textContent += ' · press play to resume';
-        }
-      }
-    } catch (error) {
-      hideFilmBuffering();
-      filmQualityStatus.textContent = error.message || 'Unable to switch video quality.';
-    } finally {
-      filmQuality.disabled = false;
-    }
-  }
-
-  function updatePlaybackBuffer() {
-    if (!filmBufferingStatus || !filmBufferingBar) return;
-    const bufferedSeconds = window.BabyShowerFilm.getBufferedSeconds(film);
-    const targetSeconds = Number(film.dataset.startupBufferSeconds) || 10;
-    const percentage = Math.min(100, Math.round((bufferedSeconds / targetSeconds) * 100));
-    filmBufferingBar.style.width = `${percentage}%`;
-    filmBufferingStatus.textContent = `${Math.floor(bufferedSeconds)} seconds ready · streaming smoothly`;
-  }
-
-  film.addEventListener('play', () => {
-    if (film.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) showFilmBuffering();
-  });
-  film.addEventListener('waiting', showFilmBuffering);
-  film.addEventListener('stalled', showFilmBuffering);
-  film.addEventListener('progress', updatePlaybackBuffer);
-  film.addEventListener('playing', hideFilmBuffering);
-  film.addEventListener('pause', hideFilmBuffering);
-  film.addEventListener('canplay', () => {
-    if (!film.paused) hideFilmBuffering();
-  });
-  film.addEventListener('ended', hideFilmBuffering);
-  filmQuality.addEventListener('change', () => changeFilmQuality(filmQuality.value));
 
   function renderGallery() {
     const fragment = document.createDocumentFragment();
@@ -303,14 +143,13 @@
   async function preloadMemories() {
     const isMobile = window.matchMedia('(max-width: 900px)').matches;
     const initialPhotoCount = isMobile ? 2 : 5;
-    const urls = [...new Set([filmPoster, ...photos.slice(0, initialPhotoCount).map(photo => photo.url)].filter(Boolean))];
+    const urls = [...new Set(photos.slice(0, initialPhotoCount).map(photo => photo.url).filter(Boolean))];
     let completed = 0;
     let nextIndex = 0;
-    let filmProgress = 0;
 
     function updateProgress() {
       const imageProgress = urls.length ? completed / urls.length : 1;
-      const percentage = Math.round((filmProgress * 0.35) + (imageProgress * 65));
+      const percentage = Math.round(imageProgress * 100);
       smoothProgress.set(percentage);
       if (percentage < 25) {
         status.textContent = 'Opening the film reel';
@@ -371,28 +210,7 @@
     }
 
     updateProgress();
-    const filmPromise = window.BabyShowerFilm.preload(film, (percentage, quality, details) => {
-      filmProgress = percentage;
-      updateQualityStatus(filmQuality.value, quality);
-      updateProgress();
-      if (details.measuringConnection) {
-        status.textContent = 'Preparing the best high-quality experience for your connection';
-        return;
-      }
-      const buffered = Math.floor(details.bufferedSeconds);
-      const eta = details.etaSeconds;
-      status.textContent = eta === null
-        ? `High-quality film · ${buffered}s ready · please stay until the end to spot familiar faces`
-        : `Worth a little wait · about ${eta} second${eta === 1 ? '' : 's'} to go`;
-    }).catch(error => {
-      console.error('Unable to preload the Baby Shower film.', error);
-      filmProgress = 100;
-      updateProgress();
-    });
-    await Promise.all([
-      filmPromise,
-      ...Array.from({ length: Math.min(4, urls.length) }, worker)
-    ]);
+    await Promise.all(Array.from({ length: Math.min(4, urls.length) }, worker));
     await smoothProgress.complete();
     renderGallery();
     clearInterval(preloaderMessageTimer);
