@@ -328,6 +328,82 @@
     }
   };
 
+  function resetPersonalizedShareForm() {
+    document.getElementById('video-share-email').value = '';
+    document.getElementById('video-share-name').value = '';
+    document.getElementById('video-share-phone').value = '';
+    document.getElementById('video-share-timestamp').value = '';
+    document.getElementById('video-share-include-collage').checked = false;
+    document.getElementById('video-share-collage-builder').hidden = true;
+    window.clearShareCollage();
+  }
+
+  function validatePersonalizedShareDetails({ email, phone, videoTimestamp, requireEmail, requireContact }) {
+    if (requireEmail && !email) throw new Error('Enter the recipient email address.');
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new Error('Enter a valid recipient email address.');
+    }
+    const phoneDigits = phone.replace(/\D/g, '');
+    if (phone && (phoneDigits.length < 7 || phoneDigits.length > 15)) {
+      throw new Error('Enter the WhatsApp number with country code.');
+    }
+    if (requireContact && !email && !phoneDigits) {
+      throw new Error('Enter an email address or WhatsApp number.');
+    }
+    if (videoTimestamp) {
+      const match = videoTimestamp.match(/^(\d{1,2}):([0-5]\d)$/);
+      if (!match || (Number(match[1]) * 60) + Number(match[2]) > 215) {
+        throw new Error('Enter a video moment within 3:35, for example 1:42.');
+      }
+    }
+  }
+
+  function renderSavedShareCards(cards) {
+    const grid = document.getElementById('saved-share-grid');
+    const summary = document.getElementById('saved-share-summary');
+    const sendAllButton = document.getElementById('saved-share-send-all');
+    if (!grid || !summary || !sendAllButton) return;
+
+    const pendingEmailCount = cards.filter(card => card.email && !card.emailSentAt).length;
+    const whatsappCount = cards.filter(card => card.phone).length;
+    summary.textContent = `${cards.length} saved · ${pendingEmailCount} pending email${pendingEmailCount === 1 ? '' : 's'} · ${whatsappCount} WhatsApp contact${whatsappCount === 1 ? '' : 's'}`;
+    sendAllButton.disabled = pendingEmailCount === 0;
+    sendAllButton.textContent = pendingEmailCount
+      ? `Send All ${pendingEmailCount} Pending Email${pendingEmailCount === 1 ? '' : 's'}`
+      : 'All Saved Emails Sent';
+
+    grid.innerHTML = cards.map(card => `
+      <article class="saved-share-card">
+        ${card.collageUrl
+          ? `<img src="${card.collageUrl}" alt="Personalized collage for ${escapeAdminHtml(card.name)}" loading="lazy" />`
+          : '<div style="aspect-ratio:4/3;display:grid;place-items:center;background:#eadde1;color:var(--muted);font-size:0.75rem">No collage</div>'}
+        <div class="saved-share-card__body">
+          <h4>${escapeAdminHtml(card.name)}</h4>
+          ${card.email ? `<p>${escapeAdminHtml(card.email)}</p>` : ''}
+          ${card.phone ? `<p>WhatsApp: +${escapeAdminHtml(card.phone)}</p>` : ''}
+          ${card.videoTimestamp ? `<p>Video moment: ${escapeAdminHtml(card.videoTimestamp)}</p>` : ''}
+          <div class="saved-share-card__status">
+            ${card.email
+              ? `<span class="saved-share-card__badge${card.emailSentAt ? ' is-sent' : ''}">${card.emailSentAt ? 'Email sent' : 'Email pending'}</span>`
+              : ''}
+            ${card.phone
+              ? `<span class="saved-share-card__badge${card.whatsappOpenedAt ? ' is-sent' : ''}">${card.whatsappOpenedAt ? 'WhatsApp opened' : 'WhatsApp ready'}</span>`
+              : ''}
+          </div>
+          <div class="saved-share-card__actions">
+            ${card.email && !card.emailSentAt
+              ? `<button type="button" class="btn btn--dark" onclick="sendSavedShareCard('${card.id}')">Send Email</button>`
+              : ''}
+            ${card.phone
+              ? `<button type="button" class="btn" style="background:#25d366;color:#fff;border-color:#25d366" onclick="openSavedShareCardWhatsApp('${card.id}')">Open WhatsApp</button>`
+              : ''}
+            <button type="button" class="btn btn--outline" onclick="deleteSavedShareCard('${card.id}')">Delete</button>
+          </div>
+        </div>
+      </article>
+    `).join('') || '<p style="color:var(--muted)">No personalized cards saved yet.</p>';
+  }
+
   window.loadEmailCampaign = async function () {
     const status = document.getElementById('email-campaign-status');
     if (!status) return;
@@ -345,6 +421,7 @@
       document.getElementById('email-sent-count').textContent = data.campaign.sentCount;
       document.getElementById('email-pending-count').textContent = data.campaign.pendingCount;
       document.getElementById('email-campaign-preview').srcdoc = data.campaign.previewHtml;
+      renderSavedShareCards(data.campaign.shareCards || []);
       document.getElementById('email-recipient-list').innerHTML = data.campaign.recipients.map(recipient => `
         <span style="padding:0.45rem 0.7rem;border:1px solid ${recipient.sent ? '#86c79f' : 'var(--border)'};border-radius:999px;background:${recipient.sent ? '#edf9f1' : 'var(--ivory)'};font-size:0.72rem">
           ${recipient.sent ? '✓ ' : ''}${escapeAdminHtml(recipient.name)} · ${escapeAdminHtml(recipient.email)}
@@ -396,21 +473,17 @@
   window.sendPrivateVideoLink = async function () {
     const email = document.getElementById('video-share-email').value.trim();
     const name = document.getElementById('video-share-name').value.trim();
+    const phone = document.getElementById('video-share-phone').value.trim();
     const videoTimestamp = document.getElementById('video-share-timestamp').value.trim();
     const status = document.getElementById('video-share-status');
     const button = document.getElementById('video-share-send');
-
-    if (!email) {
-      status.textContent = 'Enter the recipient email address.';
-      status.style.color = '#991b1b';
-      return;
-    }
 
     button.disabled = true;
     status.textContent = 'Preparing the personalized invitation...';
     status.style.color = 'var(--muted)';
 
     try {
+      validatePersonalizedShareDetails({ email, phone, videoTimestamp, requireEmail: true });
       const collage = await prepareShareCollage();
       status.textContent = 'Sending the Baby Shower invitation...';
       const response = await fetch(API + '/email-campaign', {
@@ -420,6 +493,7 @@
           mode: 'share',
           email,
           name,
+          phone,
           videoTimestamp,
           collageUrl: collage && collage.url,
           collageBase64: collage && collage.base64
@@ -431,12 +505,7 @@
         ? `Personalized collage, Baby Shower link, and login details sent to ${email}.`
         : `Baby Shower link and login details sent to ${email}.`;
       status.style.color = '#2a7c4f';
-      document.getElementById('video-share-email').value = '';
-      document.getElementById('video-share-name').value = '';
-      document.getElementById('video-share-timestamp').value = '';
-      document.getElementById('video-share-include-collage').checked = false;
-      document.getElementById('video-share-collage-builder').hidden = true;
-      window.clearShareCollage();
+      resetPersonalizedShareForm();
     } catch (error) {
       status.textContent = error.message;
       status.style.color = '#991b1b';
@@ -447,6 +516,7 @@
 
   window.shareVideoOnWhatsApp = async function () {
     const name = document.getElementById('video-share-name').value.trim();
+    const phone = document.getElementById('video-share-phone').value.trim();
     const videoTimestamp = document.getElementById('video-share-timestamp').value.trim();
     const status = document.getElementById('video-share-status');
     const button = document.getElementById('video-share-whatsapp');
@@ -465,17 +535,21 @@
     status.style.color = 'var(--muted)';
 
     try {
+      validatePersonalizedShareDetails({ email: '', phone, videoTimestamp });
       const collage = await prepareShareCollage();
       const response = await fetch(API + '/email-campaign', {
         method: 'POST',
         headers: adminHeaders(),
-        body: JSON.stringify({ mode: 'whatsapp', name, videoTimestamp, collageUrl: collage && collage.url })
+        body: JSON.stringify({ mode: 'whatsapp', name, phone, videoTimestamp, collageUrl: collage && collage.url })
       });
       const data = await response.json();
       if (!response.ok || !data.success || !data.message) {
         throw new Error(data.error || 'WhatsApp invitation could not be prepared.');
       }
-      whatsappWindow.location.replace(`https://wa.me/?text=${encodeURIComponent(data.message)}`);
+      const whatsappUrl = data.phone
+        ? `https://wa.me/${data.phone}?text=${encodeURIComponent(data.message)}`
+        : `https://wa.me/?text=${encodeURIComponent(data.message)}`;
+      whatsappWindow.location.replace(whatsappUrl);
       status.textContent = collage
         ? 'WhatsApp opened with the personalized collage link and invitation ready to send.'
         : 'WhatsApp opened with the invitation ready to send.';
@@ -485,6 +559,169 @@
       status.textContent = error.message;
       status.style.color = '#991b1b';
     } finally {
+      button.disabled = false;
+    }
+  };
+
+  window.savePersonalizedShareCard = async function () {
+    const name = document.getElementById('video-share-name').value.trim();
+    const email = document.getElementById('video-share-email').value.trim();
+    const phone = document.getElementById('video-share-phone').value.trim();
+    const videoTimestamp = document.getElementById('video-share-timestamp').value.trim();
+    const status = document.getElementById('video-share-status');
+    const button = document.getElementById('video-share-save');
+
+    if (!name) {
+      status.textContent = 'Enter the recipient name before saving.';
+      status.style.color = '#991b1b';
+      return;
+    }
+    button.disabled = true;
+    status.textContent = 'Preparing and saving the personalized card...';
+    status.style.color = 'var(--muted)';
+    try {
+      validatePersonalizedShareDetails({ email, phone, videoTimestamp, requireContact: true });
+      const collage = await prepareShareCollage();
+      const response = await fetch(API + '/email-campaign', {
+        method: 'POST',
+        headers: adminHeaders(),
+        body: JSON.stringify({
+          mode: 'save-share-card',
+          name,
+          email,
+          phone,
+          videoTimestamp,
+          collageUrl: collage && collage.url
+        })
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error || 'The personalized card could not be saved.');
+      status.textContent = `Saved ${name}'s personalized card.`;
+      status.style.color = '#2a7c4f';
+      resetPersonalizedShareForm();
+      await loadEmailCampaign();
+    } catch (error) {
+      status.textContent = error.message;
+      status.style.color = '#991b1b';
+    } finally {
+      button.disabled = false;
+    }
+  };
+
+  window.sendSavedShareCard = async function (id) {
+    const card = (currentEmailCampaign.shareCards || []).find(item => item.id === id);
+    if (!card || !card.email) return;
+    if (!confirm(`Send ${card.name}'s saved card to ${card.email}?`)) return;
+    const status = document.getElementById('saved-share-status');
+    status.textContent = `Sending ${card.name}'s email...`;
+    status.style.color = 'var(--muted)';
+    try {
+      const response = await fetch(API + '/email-campaign', {
+        method: 'POST',
+        headers: adminHeaders(),
+        body: JSON.stringify({ mode: 'send-share-card', id })
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error || 'The saved email could not be sent.');
+      status.textContent = `Email sent to ${card.name}.`;
+      status.style.color = '#2a7c4f';
+      await loadEmailCampaign();
+    } catch (error) {
+      status.textContent = error.message;
+      status.style.color = '#991b1b';
+    }
+  };
+
+  window.openSavedShareCardWhatsApp = async function (id) {
+    const card = (currentEmailCampaign.shareCards || []).find(item => item.id === id);
+    if (!card) return;
+    const whatsappWindow = window.open('about:blank', '_blank');
+    const status = document.getElementById('saved-share-status');
+    if (!whatsappWindow) {
+      status.textContent = 'Allow pop-ups for this page, then try WhatsApp again.';
+      status.style.color = '#991b1b';
+      return;
+    }
+    whatsappWindow.opener = null;
+    whatsappWindow.document.body.textContent = 'Preparing WhatsApp...';
+    try {
+      const response = await fetch(API + '/email-campaign', {
+        method: 'POST',
+        headers: adminHeaders(),
+        body: JSON.stringify({ mode: 'whatsapp-card', id })
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error || 'The WhatsApp card could not be opened.');
+      const whatsappUrl = data.phone
+        ? `https://wa.me/${data.phone}?text=${encodeURIComponent(data.message)}`
+        : `https://wa.me/?text=${encodeURIComponent(data.message)}`;
+      whatsappWindow.location.replace(whatsappUrl);
+      status.textContent = `WhatsApp opened for ${card.name}.`;
+      status.style.color = '#2a7c4f';
+      await loadEmailCampaign();
+    } catch (error) {
+      whatsappWindow.close();
+      status.textContent = error.message;
+      status.style.color = '#991b1b';
+    }
+  };
+
+  window.deleteSavedShareCard = async function (id) {
+    const card = (currentEmailCampaign.shareCards || []).find(item => item.id === id);
+    if (!card || !confirm(`Delete ${card.name}'s saved card?`)) return;
+    const status = document.getElementById('saved-share-status');
+    try {
+      const response = await fetch(API + '/email-campaign', {
+        method: 'POST',
+        headers: adminHeaders(),
+        body: JSON.stringify({ mode: 'delete-share-card', id })
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error || 'The saved card could not be deleted.');
+      status.textContent = `Deleted ${card.name}'s saved card.`;
+      status.style.color = '#2a7c4f';
+      await loadEmailCampaign();
+    } catch (error) {
+      status.textContent = error.message;
+      status.style.color = '#991b1b';
+    }
+  };
+
+  window.sendAllSavedShareCards = async function () {
+    const pendingCards = (currentEmailCampaign.shareCards || []).filter(card => card.email && !card.emailSentAt);
+    if (!pendingCards.length) return;
+    const requiredConfirmation = `SEND ${pendingCards.length} SAVED EMAIL${pendingCards.length === 1 ? '' : 'S'}`;
+    const confirmation = prompt(
+      `This will send every pending personalized email and cannot be undone.\n\nType exactly:\n${requiredConfirmation}`
+    );
+    if (confirmation === null) return;
+    const status = document.getElementById('saved-share-status');
+    if (confirmation !== requiredConfirmation) {
+      status.textContent = 'Confirmation did not match. No saved emails were sent.';
+      status.style.color = '#991b1b';
+      return;
+    }
+
+    const button = document.getElementById('saved-share-send-all');
+    button.disabled = true;
+    status.textContent = `Sending ${pendingCards.length} personalized emails...`;
+    status.style.color = 'var(--muted)';
+    try {
+      const response = await fetch(API + '/email-campaign', {
+        method: 'POST',
+        headers: adminHeaders(),
+        body: JSON.stringify({ mode: 'send-share-cards', confirmation })
+      });
+      const data = await response.json();
+      if (!response.ok && response.status !== 207) throw new Error(data.error || 'Saved emails could not be sent.');
+      status.textContent = data.failedCount
+        ? `Sent ${data.sentCount}; ${data.failedCount} failed and remain pending.`
+        : `Sent all ${data.sentCount} personalized emails.`;
+      status.style.color = data.failedCount ? '#9a6718' : '#2a7c4f';
+      await loadEmailCampaign();
+    } catch (error) {
+      status.textContent = error.message;
+      status.style.color = '#991b1b';
       button.disabled = false;
     }
   };

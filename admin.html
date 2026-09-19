@@ -411,10 +411,17 @@
               <input type="text" id="video-share-name" placeholder="Friend" />
             </div>
           </div>
-          <div class="form-group" style="max-width:320px">
-            <label>Where They Appear in the Video (Optional)</label>
-            <input type="text" id="video-share-timestamp" inputmode="numeric" placeholder="e.g. 1:42" />
-            <small style="color:var(--muted)">Adds a direct “jump to your moment” YouTube link.</small>
+          <div class="form-row">
+            <div class="form-group">
+              <label>WhatsApp Number (Optional)</label>
+              <input type="tel" id="video-share-phone" placeholder="e.g. +1 425 555 0123" />
+              <small style="color:var(--muted)">Include the country code to open the saved card for this person.</small>
+            </div>
+            <div class="form-group">
+              <label>Where They Appear in the Video (Optional)</label>
+              <input type="text" id="video-share-timestamp" inputmode="numeric" placeholder="e.g. 1:42" />
+              <small style="color:var(--muted)">Adds a direct “jump to your moment” YouTube link.</small>
+            </div>
           </div>
           <label class="share-collage-toggle">
             <input type="checkbox" id="video-share-include-collage" />
@@ -444,10 +451,24 @@
             <p class="admin-hint share-collage-privacy">Each generated collage uses an unguessable link but is stored in the public photo container so WhatsApp and email clients can display it.</p>
           </div>
           <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1rem">
-            <button type="button" class="btn btn--dark" id="video-share-send" style="width:auto;padding:0.65rem 1.25rem" onclick="sendPrivateVideoLink()">Send by Email</button>
-            <button type="button" class="btn" id="video-share-whatsapp" style="width:auto;padding:0.65rem 1.25rem;background:#25d366;color:#fff;border-color:#25d366" onclick="shareVideoOnWhatsApp()">Share through WhatsApp</button>
+            <button type="button" class="btn btn--dark" id="video-share-save" style="width:auto;padding:0.65rem 1.25rem" onclick="savePersonalizedShareCard()">Save Card</button>
+            <button type="button" class="btn btn--outline" id="video-share-send" style="width:auto;padding:0.65rem 1.25rem" onclick="sendPrivateVideoLink()">Send Email Now</button>
+            <button type="button" class="btn" id="video-share-whatsapp" style="width:auto;padding:0.65rem 1.25rem;background:#25d366;color:#fff;border-color:#25d366" onclick="shareVideoOnWhatsApp()">Open WhatsApp Now</button>
           </div>
           <p id="video-share-status" style="font-size:0.82rem;margin-top:1rem"></p>
+        </div>
+
+        <div class="admin-card" style="margin-top:2rem">
+          <div class="saved-share-header">
+            <div>
+              <h3 class="admin-card__title" style="margin-bottom:0.35rem">Saved Personalized Cards</h3>
+              <p class="admin-hint" style="margin-bottom:0">Review every guest card, send one immediately, or send all pending emails after the set is complete.</p>
+            </div>
+            <button type="button" class="btn btn--dark" id="saved-share-send-all" style="width:auto;padding:0.65rem 1.25rem" onclick="sendAllSavedShareCards()">Send All Pending Emails</button>
+          </div>
+          <div class="saved-share-summary" id="saved-share-summary">Loading saved cards...</div>
+          <div class="saved-share-grid" id="saved-share-grid"></div>
+          <p id="saved-share-status" style="font-size:0.82rem;margin-top:1rem"></p>
         </div>
       </section>
 

@@ -7,6 +7,7 @@ const { EmailClient } = require("@azure/communication-email");
 
 let cosmosContainer;
 const BABY_SHOWER_CAMPAIGN_ID = "email-campaign_babyshower-memories-20260916";
+const BABY_SHOWER_SHARE_CARD_CATEGORY = "babyshower-share-card";
 const BABY_SHOWER_EVENT_ID = "event_1778962966548_06mo";
 const BABY_SHOWER_MEMORIES_URL = "https://www.shravek.com/babyshower-memories.html";
 const BABY_SHOWER_POSTER_URL = "https://shravekjourneyphotos.blob.core.windows.net/photos/baby-shower-film/before-we-met-you-poster.webp?v=20260915";
@@ -208,6 +209,32 @@ function buildVideoMomentUrl(value) {
   return `${BABY_SHOWER_YOUTUBE_URL}?t=${seconds}s`;
 }
 
+function normalizeWhatsAppPhone(value) {
+  const phone = String(value || "").replace(/\D/g, "");
+  if (!phone) return "";
+  if (phone.length < 7 || phone.length > 15) {
+    throw new Error("Enter the WhatsApp number with country code.");
+  }
+  return phone;
+}
+
+async function downloadShareCollageAttachment(collageUrlValue) {
+  const collageUrl = validateCollageUrl(collageUrlValue);
+  if (!collageUrl) return null;
+
+  const connectionString = process.env.STORAGE_CONNECTION_STRING;
+  if (!connectionString) throw new Error("Storage is not configured.");
+
+  const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+  const url = new URL(collageUrl);
+  const blobName = decodeURIComponent(url.pathname.replace(/^\/photos\//, ""));
+  const content = await blobServiceClient
+    .getContainerClient("photos")
+    .getBlockBlobClient(blobName)
+    .downloadToBuffer();
+  return buildCollageAttachment(content.toString("base64"));
+}
+
 async function requireAdmin(context, req) {
   const authorization = (req.headers && req.headers.authorization) || "";
   const token = (req.headers && req.headers["x-admin-token"]) ||
@@ -367,6 +394,33 @@ async function getCampaignRecord(container) {
     if (error.code === 404 || error.statusCode === 404) return null;
     throw error;
   }
+}
+
+async function getBabyShowerShareCards(container) {
+  const { resources } = await container.items
+    .query({
+      query: "SELECT * FROM c WHERE c.category = @category",
+      parameters: [{ name: "@category", value: BABY_SHOWER_SHARE_CARD_CATEGORY }]
+    })
+    .fetchAll();
+  return resources.sort((left, right) => Date.parse(right.createdAt || 0) - Date.parse(left.createdAt || 0));
+}
+
+async function sendSavedShareCardEmail(container, card, credentials) {
+  if (!card.email || !isValidEmail(card.email)) {
+    throw new Error("This saved card does not have a valid email address.");
+  }
+  const collageAttachment = await downloadShareCollageAttachment(card.collageUrl);
+  const message = buildBabyShowerAnnouncement(card.name, credentials, {
+    url: card.collageUrl,
+    contentInBase64: collageAttachment && collageAttachment.contentInBase64,
+    videoTimestamp: card.videoTimestamp
+  });
+  const result = await sendEmail({ to: card.email, ...message });
+  card.emailSentAt = new Date().toISOString();
+  card.emailStatus = result.status;
+  await container.item(card.id, BABY_SHOWER_SHARE_CARD_CATEGORY).replace(card);
+  return { id: card.id, email: card.email, status: result.status };
 }
 
 async function runWithConcurrency(items, limit, worker) {
@@ -1184,6 +1238,7 @@ async function handleEmailCampaign(context, req) {
   const record = await getCampaignRecord(container);
   const sentRecipients = new Set((record && record.sentRecipients) || []);
   const pendingRecipients = recipients.filter(recipient => !sentRecipients.has(recipient.email));
+  const shareCards = await getBabyShowerShareCards(container);
   const babyShowerAccess = getBabyShowerAccessConfig();
   const preview = buildBabyShowerAnnouncement("Ananya", babyShowerAccess);
 
@@ -1205,6 +1260,17 @@ async function handleEmailCampaign(context, req) {
             name: recipient.name,
             email: maskEmail(recipient.email),
             sent: sentRecipients.has(recipient.email)
+          })),
+          shareCards: shareCards.map(card => ({
+            id: card.id,
+            name: card.name,
+            email: card.email || "",
+            phone: card.phone || "",
+            videoTimestamp: card.videoTimestamp || "",
+            collageUrl: card.collageUrl || "",
+            createdAt: card.createdAt,
+            emailSentAt: card.emailSentAt || "",
+            whatsappOpenedAt: card.whatsappOpenedAt || ""
           })),
           previewHtml: preview.htmlBody
         }
@@ -1229,7 +1295,187 @@ async function handleEmailCampaign(context, req) {
     return;
   }
 
+  if (mode === "save-share-card") {
+    const name = String(body.name || "").trim();
+    const email = String(body.email || "").trim().toLowerCase();
+    const phone = normalizeWhatsAppPhone(body.phone);
+    const collageUrl = validateCollageUrl(body.collageUrl);
+    buildVideoMomentUrl(body.videoTimestamp);
+
+    if (!name) {
+      context.res = {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ success: false, error: "Enter the recipient name." })
+      };
+      return;
+    }
+    if (email && !isValidEmail(email)) {
+      context.res = {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ success: false, error: "Enter a valid recipient email address." })
+      };
+      return;
+    }
+    if (!email && !phone) {
+      context.res = {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ success: false, error: "Enter an email address or WhatsApp number." })
+      };
+      return;
+    }
+
+    const now = new Date().toISOString();
+    const card = {
+      id: `babyshower-share-card_${Date.now()}_${crypto.randomBytes(3).toString("hex")}`,
+      category: BABY_SHOWER_SHARE_CARD_CATEGORY,
+      name,
+      email,
+      phone,
+      videoTimestamp: String(body.videoTimestamp || "").trim(),
+      collageUrl,
+      createdAt: now,
+      createdBy: admin.username
+    };
+    await container.items.create(card);
+    context.res = {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ success: true, mode: "save-share-card", card })
+    };
+    return;
+  }
+
+  if (mode === "delete-share-card") {
+    const card = shareCards.find(item => item.id === body.id);
+    if (!card) {
+      context.res = {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ success: false, error: "Saved card not found." })
+      };
+      return;
+    }
+    await container.item(card.id, BABY_SHOWER_SHARE_CARD_CATEGORY).delete();
+    context.res = {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ success: true, mode: "delete-share-card" })
+    };
+    return;
+  }
+
+  if (mode === "whatsapp-card") {
+    const card = shareCards.find(item => item.id === body.id);
+    if (!card) {
+      context.res = {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ success: false, error: "Saved card not found." })
+      };
+      return;
+    }
+    card.whatsappOpenedAt = new Date().toISOString();
+    await container.item(card.id, BABY_SHOWER_SHARE_CARD_CATEGORY).replace(card);
+    context.res = {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store"
+      },
+      body: JSON.stringify({
+        success: true,
+        mode: "whatsapp-card",
+        phone: card.phone || "",
+        message: buildBabyShowerWhatsAppMessage(
+          card.name,
+          babyShowerAccess,
+          card.collageUrl,
+          card.videoTimestamp
+        )
+      })
+    };
+    return;
+  }
+
+  if (mode === "send-share-card") {
+    const card = shareCards.find(item => item.id === body.id);
+    if (!card) {
+      context.res = {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ success: false, error: "Saved card not found." })
+      };
+      return;
+    }
+    if (card.emailSentAt) {
+      context.res = {
+        status: 409,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ success: false, error: "This saved card email has already been sent." })
+      };
+      return;
+    }
+    const result = await sendSavedShareCardEmail(container, card, babyShowerAccess);
+    context.res = {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ success: true, mode: "send-share-card", status: result.status })
+    };
+    return;
+  }
+
+  if (mode === "send-share-cards") {
+    const pendingCards = shareCards.filter(card => card.email && !card.emailSentAt);
+    if (!pendingCards.length) {
+      context.res = {
+        status: 409,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ success: false, error: "There are no saved cards with pending emails." })
+      };
+      return;
+    }
+    const requiredConfirmation = `SEND ${pendingCards.length} SAVED EMAIL${pendingCards.length === 1 ? "" : "S"}`;
+    if (body.confirmation !== requiredConfirmation) {
+      context.res = {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ success: false, error: `Type "${requiredConfirmation}" to confirm.` })
+      };
+      return;
+    }
+
+    const results = await runWithConcurrency(
+      pendingCards,
+      3,
+      card => sendSavedShareCardEmail(container, card, babyShowerAccess)
+    );
+
+    const sent = [];
+    const failed = [];
+    results.forEach((result, index) => {
+      const card = pendingCards[index];
+      if (result.status === "fulfilled") sent.push(result.value);
+      else failed.push({ id: card.id, email: card.email, error: result.reason.message });
+    });
+    context.res = {
+      status: failed.length ? 207 : 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        success: failed.length === 0,
+        mode: "send-share-cards",
+        sentCount: sent.length,
+        failedCount: failed.length,
+        failed
+      })
+    };
+    return;
+  }
+
   if (mode === "whatsapp") {
+    const phone = normalizeWhatsAppPhone(body.phone);
     context.res = {
       status: 200,
       headers: {
@@ -1239,6 +1485,7 @@ async function handleEmailCampaign(context, req) {
       body: JSON.stringify({
         success: true,
         mode: "whatsapp",
+        phone,
         message: buildBabyShowerWhatsAppMessage(body.name, babyShowerAccess, body.collageUrl, body.videoTimestamp)
       })
     };
@@ -1295,7 +1542,7 @@ async function handleEmailCampaign(context, req) {
     context.res = {
       status: 400,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ success: false, error: "Mode must be collage-upload, test, share, whatsapp, or send." })
+      body: JSON.stringify({ success: false, error: "Unsupported email campaign mode." })
     };
     return;
   }
