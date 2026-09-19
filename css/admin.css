@@ -286,6 +286,80 @@
   font-weight: 500;
 }
 
+.share-collage-local-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.share-collage-local-picker .btn {
+  width: auto;
+  margin: 0;
+  padding: 0.55rem 0.85rem;
+  cursor: pointer;
+}
+
+.share-collage-local-picker span {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.share-collage-local-selection {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 0.75rem;
+}
+
+.share-collage-local-selection[hidden] {
+  display: none;
+}
+
+.share-collage-local-photo {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+  width: min(100%, 300px);
+  padding: 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.share-collage-local-photo img {
+  width: 54px;
+  height: 42px;
+  border-radius: 4px;
+  object-fit: contain;
+  background: #211b1e;
+}
+
+.share-collage-local-photo span {
+  overflow: hidden;
+  font-size: 0.72rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.share-collage-local-photo button {
+  padding: 0.25rem 0.4rem;
+  border: 0;
+  background: transparent;
+  color: #991b1b;
+  cursor: pointer;
+}
+
+.share-collage-section-title {
+  margin: 1rem 0 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .share-collage-photo-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -324,7 +398,7 @@
   box-shadow: 0 0 0 2px rgba(185, 101, 128, 0.2);
 }
 
-.share-collage-photo span {
+.share-collage-photo__check {
   position: absolute;
   top: 0.3rem;
   right: 0.3rem;
@@ -339,7 +413,7 @@
   text-align: center;
 }
 
-.share-collage-photo.is-selected span {
+.share-collage-photo.is-selected .share-collage-photo__check {
   display: block;
 }
 
@@ -460,6 +534,11 @@
 @media (max-width: 768px) {
   .share-collage-toolbar {
     align-items: stretch;
+    flex-direction: column;
+  }
+
+  .share-collage-local-picker {
+    align-items: flex-start;
     flex-direction: column;
   }
 

@@ -52,16 +52,9 @@
 
   let currentEmailCampaign;
   const maxShareCollagePhotos = 4;
-  const firstRecentlyAddedSharePhoto = 406;
   const shareCollagePhotos = ((window.PREGNANCY_MEDIA && window.PREGNANCY_MEDIA['month-7']) || [])
     .filter(photo => photo.type === 'image')
-    .map((photo, index) => ({ ...photo, index }))
-    .sort((left, right) => {
-      const leftIsRecent = left.order >= firstRecentlyAddedSharePhoto;
-      const rightIsRecent = right.order >= firstRecentlyAddedSharePhoto;
-      if (leftIsRecent !== rightIsRecent) return leftIsRecent ? -1 : 1;
-      return left.order - right.order;
-    });
+    .map((photo, index) => ({ ...photo, index }));
   let selectedShareCollagePhotos = [];
   let visibleShareCollagePhotos = 72;
   let collageRenderVersion = 0;
@@ -89,6 +82,35 @@
       image.onerror = () => reject(new Error('One of the selected photos could not be loaded.'));
       image.src = url;
     });
+  }
+
+  function fileToDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error(`${file.name} could not be read.`));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function prepareLocalSharePhoto(file) {
+    if (!file.type.startsWith('image/')) throw new Error(`${file.name} is not an image.`);
+    if (file.size > 30 * 1024 * 1024) throw new Error(`${file.name} is larger than 30 MB.`);
+
+    const originalUrl = await fileToDataUrl(file);
+    const image = await loadCollageImage(originalUrl);
+    const maxDimension = 2000;
+    const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
+    if (scale === 1) return originalUrl;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(image.naturalWidth * scale);
+    canvas.height = Math.round(image.naturalHeight * scale);
+    const context = canvas.getContext('2d');
+    context.fillStyle = '#fff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/jpeg', 0.88);
   }
 
   function collagePhotoFrames(count) {
@@ -199,9 +221,10 @@
 
   function renderShareCollagePhotoGrid() {
     const grid = document.getElementById('share-collage-photo-grid');
+    const localSelection = document.getElementById('share-collage-local-selection');
     const loadMoreButton = document.getElementById('share-collage-load-more');
     const count = document.getElementById('share-collage-selection-count');
-    if (!grid || !loadMoreButton || !count) return;
+    if (!grid || !localSelection || !loadMoreButton || !count) return;
 
     const query = document.getElementById('share-collage-search').value.trim().toLowerCase();
     const filtered = shareCollagePhotos.filter(photo => {
@@ -210,19 +233,81 @@
     });
     const visible = filtered.slice(0, visibleShareCollagePhotos);
 
-    grid.innerHTML = visible.map(photo => {
+    function photoButton(photo) {
       const selected = selectedShareCollagePhotos.some(item => item.url === photo.url);
       return `
         <button type="button" class="share-collage-photo${selected ? ' is-selected' : ''}" onclick="toggleShareCollagePhoto(${photo.index})" aria-pressed="${selected}" title="${escapeAdminHtml(photo.sourceName || photo.alt)}">
           <img src="${photo.url}" alt="${escapeAdminHtml(photo.alt || `Baby Shower photo ${photo.order}`)}" loading="lazy" />
-          <span aria-hidden="true">✓</span>
+          <span class="share-collage-photo__check" aria-hidden="true">✓</span>
         </button>
       `;
-    }).join('') || '<p style="color:var(--muted)">No matching photos.</p>';
+    }
+
+    grid.innerHTML = visible.map(photo => photoButton(photo)).join('') ||
+      '<p style="color:var(--muted)">No matching website photos.</p>';
+
+    const localPhotos = selectedShareCollagePhotos.filter(photo => photo.local);
+    localSelection.hidden = localPhotos.length === 0;
+    localSelection.innerHTML = localPhotos.map(photo => `
+      <div class="share-collage-local-photo">
+        <img src="${photo.url}" alt="${escapeAdminHtml(photo.alt)}" />
+        <span title="${escapeAdminHtml(photo.sourceName)}">${escapeAdminHtml(photo.sourceName)}</span>
+        <button type="button" onclick="removeLocalShareCollagePhoto('${photo.index}')" aria-label="Remove ${escapeAdminHtml(photo.sourceName)}">Remove</button>
+      </div>
+    `).join('');
 
     count.textContent = `${selectedShareCollagePhotos.length} of ${maxShareCollagePhotos} selected`;
     loadMoreButton.hidden = visible.length >= filtered.length;
   }
+
+  window.addLocalShareCollagePhotos = async function (event) {
+    const input = event.target;
+    const files = Array.from(input.files || []);
+    const status = document.getElementById('video-share-status');
+    const availableSlots = maxShareCollagePhotos - selectedShareCollagePhotos.length;
+    input.value = '';
+
+    if (!files.length) return;
+    if (availableSlots <= 0) {
+      status.textContent = 'Clear or remove a selected photo before browsing for another.';
+      status.style.color = '#9a6718';
+      return;
+    }
+
+    const selectedFiles = files.slice(0, availableSlots);
+    status.textContent = `Preparing ${selectedFiles.length} local photo${selectedFiles.length === 1 ? '' : 's'}...`;
+    status.style.color = 'var(--muted)';
+    try {
+      const preparedPhotos = [];
+      for (const [index, file] of selectedFiles.entries()) {
+        preparedPhotos.push({
+          index: `local-${Date.now()}-${index}`,
+          sourceName: file.name,
+          alt: `Local photo ${file.name}`,
+          url: await prepareLocalSharePhoto(file),
+          local: true
+        });
+      }
+      selectedShareCollagePhotos.push(...preparedPhotos);
+      invalidateShareCollage();
+      renderShareCollagePhotoGrid();
+      await renderShareCollagePreview();
+      status.textContent = files.length > selectedFiles.length
+        ? `Added ${selectedFiles.length} local photos. A collage can contain up to four photos.`
+        : `Added ${selectedFiles.length} local photo${selectedFiles.length === 1 ? '' : 's'}.`;
+      status.style.color = files.length > selectedFiles.length ? '#9a6718' : '#2a7c4f';
+    } catch (error) {
+      status.textContent = error.message;
+      status.style.color = '#991b1b';
+    }
+  };
+
+  window.removeLocalShareCollagePhoto = function (id) {
+    selectedShareCollagePhotos = selectedShareCollagePhotos.filter(photo => photo.index !== id);
+    invalidateShareCollage();
+    renderShareCollagePhotoGrid();
+    renderShareCollagePreview();
+  };
 
   window.toggleShareCollagePhoto = function (index) {
     const photo = shareCollagePhotos.find(item => item.index === index);
