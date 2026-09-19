@@ -60,6 +60,7 @@
   let collageRenderVersion = 0;
   let cachedShareCollage;
   let shareCollagePreviewError;
+  let localPhotoEditorState;
 
   function invalidateShareCollage() {
     cachedShareCollage = null;
@@ -111,6 +112,52 @@
     context.fillRect(0, 0, canvas.width, canvas.height);
     context.drawImage(image, 0, 0, canvas.width, canvas.height);
     return canvas.toDataURL('image/jpeg', 0.88);
+  }
+
+  function clampLocalPhotoEditorOffset() {
+    if (!localPhotoEditorState) return;
+    const canvas = document.getElementById('local-photo-editor-canvas');
+    const { image, rotation, zoom } = localPhotoEditorState;
+    const quarterTurn = Math.abs(rotation / 90) % 2 === 1;
+    const rotatedWidth = quarterTurn ? image.naturalHeight : image.naturalWidth;
+    const rotatedHeight = quarterTurn ? image.naturalWidth : image.naturalHeight;
+    const scale = Math.max(canvas.width / rotatedWidth, canvas.height / rotatedHeight) * zoom;
+    const maxX = Math.max(0, (rotatedWidth * scale - canvas.width) / 2);
+    const maxY = Math.max(0, (rotatedHeight * scale - canvas.height) / 2);
+    localPhotoEditorState.offsetX = Math.max(-maxX, Math.min(maxX, localPhotoEditorState.offsetX));
+    localPhotoEditorState.offsetY = Math.max(-maxY, Math.min(maxY, localPhotoEditorState.offsetY));
+  }
+
+  function drawLocalPhotoEditor(targetCanvas, offsetScale = 1) {
+    if (!localPhotoEditorState) return;
+    const { image, rotation, zoom } = localPhotoEditorState;
+    const context = targetCanvas.getContext('2d');
+    const quarterTurn = Math.abs(rotation / 90) % 2 === 1;
+    const rotatedWidth = quarterTurn ? image.naturalHeight : image.naturalWidth;
+    const rotatedHeight = quarterTurn ? image.naturalWidth : image.naturalHeight;
+    const scale = Math.max(targetCanvas.width / rotatedWidth, targetCanvas.height / rotatedHeight) * zoom;
+
+    context.fillStyle = '#211b1e';
+    context.fillRect(0, 0, targetCanvas.width, targetCanvas.height);
+    context.save();
+    context.translate(
+      targetCanvas.width / 2 + localPhotoEditorState.offsetX * offsetScale,
+      targetCanvas.height / 2 + localPhotoEditorState.offsetY * offsetScale
+    );
+    context.rotate(rotation * Math.PI / 180);
+    context.drawImage(
+      image,
+      -image.naturalWidth * scale / 2,
+      -image.naturalHeight * scale / 2,
+      image.naturalWidth * scale,
+      image.naturalHeight * scale
+    );
+    context.restore();
+  }
+
+  function renderLocalPhotoEditor() {
+    clampLocalPhotoEditorOffset();
+    drawLocalPhotoEditor(document.getElementById('local-photo-editor-canvas'));
   }
 
   function collagePhotoFrames(count) {
@@ -252,6 +299,7 @@
       <div class="share-collage-local-photo">
         <img src="${photo.url}" alt="${escapeAdminHtml(photo.alt)}" />
         <span title="${escapeAdminHtml(photo.sourceName)}">${escapeAdminHtml(photo.sourceName)}</span>
+        <button type="button" onclick="editLocalShareCollagePhoto('${photo.index}')" aria-label="Edit ${escapeAdminHtml(photo.sourceName)}">Edit</button>
         <button type="button" onclick="removeLocalShareCollagePhoto('${photo.index}')" aria-label="Remove ${escapeAdminHtml(photo.sourceName)}">Remove</button>
       </div>
     `).join('');
@@ -287,6 +335,7 @@
           url: await prepareLocalSharePhoto(file),
           local: true
         });
+        preparedPhotos[preparedPhotos.length - 1].originalUrl = preparedPhotos[preparedPhotos.length - 1].url;
       }
       selectedShareCollagePhotos.push(...preparedPhotos);
       invalidateShareCollage();
@@ -304,6 +353,82 @@
 
   window.removeLocalShareCollagePhoto = function (id) {
     selectedShareCollagePhotos = selectedShareCollagePhotos.filter(photo => photo.index !== id);
+    invalidateShareCollage();
+    renderShareCollagePhotoGrid();
+    renderShareCollagePreview();
+  };
+
+  window.editLocalShareCollagePhoto = async function (id) {
+    const photo = selectedShareCollagePhotos.find(item => item.local && item.index === id);
+    if (!photo) return;
+    const modal = document.getElementById('local-photo-editor');
+    const title = document.getElementById('local-photo-editor-title');
+    const zoomInput = document.getElementById('local-photo-editor-zoom');
+    try {
+      const image = await loadCollageImage(photo.url);
+      localPhotoEditorState = {
+        photo,
+        image,
+        rotation: 0,
+        zoom: 1,
+        offsetX: 0,
+        offsetY: 0,
+        dragging: false
+      };
+      title.textContent = `Adjust ${photo.sourceName}`;
+      zoomInput.value = '1';
+      modal.hidden = false;
+      renderLocalPhotoEditor();
+    } catch (error) {
+      const status = document.getElementById('video-share-status');
+      status.textContent = error.message;
+      status.style.color = '#991b1b';
+    }
+  };
+
+  window.closeLocalSharePhotoEditor = function (event) {
+    if (event && event.target !== event.currentTarget) return;
+    document.getElementById('local-photo-editor').hidden = true;
+    localPhotoEditorState = null;
+  };
+
+  window.updateLocalSharePhotoZoom = function (value) {
+    if (!localPhotoEditorState) return;
+    localPhotoEditorState.zoom = Math.max(1, Math.min(3, Number(value)));
+    document.getElementById('local-photo-editor-zoom').value = String(localPhotoEditorState.zoom);
+    renderLocalPhotoEditor();
+  };
+
+  window.rotateLocalSharePhoto = function (degrees) {
+    if (!localPhotoEditorState) return;
+    localPhotoEditorState.rotation = (localPhotoEditorState.rotation + degrees + 360) % 360;
+    localPhotoEditorState.offsetX = 0;
+    localPhotoEditorState.offsetY = 0;
+    renderLocalPhotoEditor();
+  };
+
+  window.resetLocalSharePhotoEditor = async function () {
+    if (!localPhotoEditorState) return;
+    localPhotoEditorState.image = await loadCollageImage(localPhotoEditorState.photo.originalUrl);
+    localPhotoEditorState.rotation = 0;
+    localPhotoEditorState.zoom = 1;
+    localPhotoEditorState.offsetX = 0;
+    localPhotoEditorState.offsetY = 0;
+    document.getElementById('local-photo-editor-zoom').value = '1';
+    renderLocalPhotoEditor();
+  };
+
+  window.applyLocalSharePhotoEdit = function () {
+    if (!localPhotoEditorState) return;
+    const editorCanvas = document.getElementById('local-photo-editor-canvas');
+    const outputCanvas = document.createElement('canvas');
+    outputCanvas.width = 1600;
+    outputCanvas.height = 1200;
+    drawLocalPhotoEditor(outputCanvas, outputCanvas.width / editorCanvas.width);
+    localPhotoEditorState.photo.url = outputCanvas.toDataURL('image/jpeg', 0.9);
+    localPhotoEditorState.photo.edited = true;
+    document.getElementById('local-photo-editor').hidden = true;
+    localPhotoEditorState = null;
     invalidateShareCollage();
     renderShareCollagePhotoGrid();
     renderShareCollagePreview();
@@ -1583,6 +1708,7 @@
   const collageToggle = document.getElementById('video-share-include-collage');
   const collageSearch = document.getElementById('share-collage-search');
   const recipientNameInput = document.getElementById('video-share-name');
+  const localPhotoEditorCanvas = document.getElementById('local-photo-editor-canvas');
   if (collageToggle) {
     collageToggle.addEventListener('change', () => {
       document.getElementById('video-share-collage-builder').hidden = !collageToggle.checked;
@@ -1601,6 +1727,38 @@
       renderShareCollagePreview();
     });
   }
+  if (localPhotoEditorCanvas) {
+    localPhotoEditorCanvas.addEventListener('pointerdown', event => {
+      if (!localPhotoEditorState) return;
+      localPhotoEditorState.dragging = true;
+      localPhotoEditorState.pointerX = event.clientX;
+      localPhotoEditorState.pointerY = event.clientY;
+      localPhotoEditorCanvas.classList.add('is-dragging');
+      localPhotoEditorCanvas.setPointerCapture(event.pointerId);
+    });
+    localPhotoEditorCanvas.addEventListener('pointermove', event => {
+      if (!localPhotoEditorState?.dragging) return;
+      const bounds = localPhotoEditorCanvas.getBoundingClientRect();
+      localPhotoEditorState.offsetX += (event.clientX - localPhotoEditorState.pointerX) * localPhotoEditorCanvas.width / bounds.width;
+      localPhotoEditorState.offsetY += (event.clientY - localPhotoEditorState.pointerY) * localPhotoEditorCanvas.height / bounds.height;
+      localPhotoEditorState.pointerX = event.clientX;
+      localPhotoEditorState.pointerY = event.clientY;
+      renderLocalPhotoEditor();
+    });
+    const stopDragging = event => {
+      if (!localPhotoEditorState) return;
+      localPhotoEditorState.dragging = false;
+      localPhotoEditorCanvas.classList.remove('is-dragging');
+      if (localPhotoEditorCanvas.hasPointerCapture(event.pointerId)) {
+        localPhotoEditorCanvas.releasePointerCapture(event.pointerId);
+      }
+    };
+    localPhotoEditorCanvas.addEventListener('pointerup', stopDragging);
+    localPhotoEditorCanvas.addEventListener('pointercancel', stopDragging);
+  }
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && localPhotoEditorState) closeLocalSharePhotoEditor();
+  });
   renderShareCollagePhotoGrid();
   renderShareCollagePreview();
   loadEmailCampaign();

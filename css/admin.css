@@ -318,7 +318,7 @@
 
 .share-collage-local-photo {
   display: grid;
-  grid-template-columns: 54px minmax(0, 1fr) auto;
+  grid-template-columns: 54px minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 0.5rem;
   width: min(100%, 300px);
@@ -347,8 +347,102 @@
   padding: 0.25rem 0.4rem;
   border: 0;
   background: transparent;
-  color: #991b1b;
+  color: var(--rose);
   cursor: pointer;
+}
+
+.share-collage-local-photo button:last-child {
+  color: #991b1b;
+}
+
+.local-photo-editor {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(22, 18, 20, 0.72);
+}
+
+.local-photo-editor[hidden] {
+  display: none;
+}
+
+.local-photo-editor__panel {
+  width: min(900px, 100%);
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  padding: 1.25rem;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.3);
+}
+
+.local-photo-editor__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.local-photo-editor__header .admin-hint,
+.local-photo-editor__header .admin-card__title {
+  margin: 0;
+}
+
+.local-photo-editor__close {
+  padding: 0.1rem 0.45rem;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.8rem;
+  cursor: pointer;
+}
+
+#local-photo-editor-canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  margin-top: 1rem;
+  border-radius: 6px;
+  background: #211b1e;
+  cursor: grab;
+  touch-action: none;
+}
+
+#local-photo-editor-canvas.is-dragging {
+  cursor: grabbing;
+}
+
+.local-photo-editor__zoom {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.local-photo-editor__tools,
+.local-photo-editor__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.local-photo-editor__tools .btn,
+.local-photo-editor__actions .btn {
+  width: auto;
+  padding: 0.55rem 0.85rem;
+}
+
+.local-photo-editor__actions {
+  justify-content: flex-end;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
 }
 
 .share-collage-section-title {

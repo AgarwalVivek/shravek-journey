@@ -457,6 +457,32 @@
             </div>
             <p class="admin-hint share-collage-privacy">Each generated collage uses an unguessable link but is stored in the public photo container so WhatsApp and email clients can display it.</p>
           </div>
+          <div class="local-photo-editor" id="local-photo-editor" role="dialog" aria-modal="true" aria-labelledby="local-photo-editor-title" hidden onclick="closeLocalSharePhotoEditor(event)">
+            <div class="local-photo-editor__panel" onclick="event.stopPropagation()">
+              <div class="local-photo-editor__header">
+                <div>
+                  <p class="admin-hint">Local photo editor</p>
+                  <h3 class="admin-card__title" id="local-photo-editor-title">Adjust photo</h3>
+                </div>
+                <button type="button" class="local-photo-editor__close" onclick="closeLocalSharePhotoEditor()" aria-label="Close photo editor">×</button>
+              </div>
+              <p class="admin-hint">Drag the photo to reposition it. Use zoom and rotation to choose the part used in the collage.</p>
+              <canvas id="local-photo-editor-canvas" width="800" height="600" aria-label="Local photo crop preview"></canvas>
+              <label class="local-photo-editor__zoom">
+                <span>Zoom</span>
+                <input type="range" id="local-photo-editor-zoom" min="1" max="3" step="0.01" value="1" oninput="updateLocalSharePhotoZoom(this.value)" />
+              </label>
+              <div class="local-photo-editor__tools">
+                <button type="button" class="btn btn--outline" onclick="rotateLocalSharePhoto(-90)">Rotate Left</button>
+                <button type="button" class="btn btn--outline" onclick="rotateLocalSharePhoto(90)">Rotate Right</button>
+                <button type="button" class="btn btn--outline" onclick="resetLocalSharePhotoEditor()">Reset</button>
+              </div>
+              <div class="local-photo-editor__actions">
+                <button type="button" class="btn btn--outline" onclick="closeLocalSharePhotoEditor()">Cancel</button>
+                <button type="button" class="btn btn--dark" onclick="applyLocalSharePhotoEdit()">Apply Edit</button>
+              </div>
+            </div>
+          </div>
           <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1rem">
             <button type="button" class="btn btn--dark" id="video-share-save" style="width:auto;padding:0.65rem 1.25rem" onclick="savePersonalizedShareCard()">Save Card</button>
             <button type="button" class="btn btn--outline" id="video-share-send" style="width:auto;padding:0.65rem 1.25rem" onclick="sendPrivateVideoLink()">Send Email Now</button>
