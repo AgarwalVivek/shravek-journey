@@ -373,7 +373,7 @@
       : 'All Saved Emails Sent';
 
     grid.innerHTML = cards.map(card => `
-      <article class="saved-share-card">
+      <article class="saved-share-card" data-share-card-id="${card.id}">
         ${card.collageUrl
           ? `<img src="${card.collageUrl}" alt="Personalized collage for ${escapeAdminHtml(card.name)}" loading="lazy" />`
           : '<div style="aspect-ratio:4/3;display:grid;place-items:center;background:#eadde1;color:var(--muted);font-size:0.75rem">No collage</div>'}
@@ -600,6 +600,9 @@
       status.style.color = '#2a7c4f';
       resetPersonalizedShareForm();
       await loadEmailCampaign();
+      const savedCard = Array.from(document.querySelectorAll('[data-share-card-id]'))
+        .find(element => element.dataset.shareCardId === data.card.id);
+      if (savedCard) savedCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } catch (error) {
       status.textContent = error.message;
       status.style.color = '#991b1b';
