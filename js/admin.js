@@ -275,28 +275,22 @@
     return canvasToBlob(document.getElementById('share-collage-canvas'));
   }
 
-  async function uploadShareCollage(blob) {
-    const uniqueId = window.crypto && window.crypto.randomUUID
-      ? window.crypto.randomUUID()
-      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const fileName = `baby-shower-collage-${uniqueId}.jpg`;
-    const sasResponse = await fetch(API + '/upload-url', {
-      method: 'POST',
-      headers: adminHeaders(),
-      body: JSON.stringify({ fileName, contentType: 'image/jpeg', folder: 'share-collages' })
-    });
-    const sasData = await sasResponse.json();
-    if (!sasResponse.ok || !sasData.success) {
-      throw new Error(sasData.error || 'Unable to prepare the collage upload.');
+  async function uploadShareCollage(base64) {
+    let response;
+    try {
+      response = await fetch(API + '/email-campaign', {
+        method: 'POST',
+        headers: adminHeaders(),
+        body: JSON.stringify({ mode: 'collage-upload', collageBase64: base64 })
+      });
+    } catch {
+      throw new Error('The collage could not reach the server. Check your connection and try again.');
     }
-
-    const uploadResponse = await fetch(sasData.uploadUrl, {
-      method: 'PUT',
-      headers: { 'x-ms-blob-type': 'BlockBlob', 'Content-Type': 'image/jpeg' },
-      body: blob
-    });
-    if (!uploadResponse.ok) throw new Error(`Collage upload failed (${uploadResponse.status}).`);
-    return sasData.blobUrl;
+    const data = await response.json();
+    if (!response.ok || !data.success || !data.collageUrl) {
+      throw new Error(data.error || 'The collage could not be uploaded.');
+    }
+    return data.collageUrl;
   }
 
   async function prepareShareCollage() {
@@ -311,10 +305,8 @@
     if (cachedShareCollage && cachedShareCollage.signature === signature) return cachedShareCollage;
 
     const blob = await createShareCollageBlob();
-    const [url, base64] = await Promise.all([
-      uploadShareCollage(blob),
-      blobToBase64(blob)
-    ]);
+    const base64 = await blobToBase64(blob);
+    const url = await uploadShareCollage(base64);
     cachedShareCollage = { signature, url, base64, blob };
     return cachedShareCollage;
   }

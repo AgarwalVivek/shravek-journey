@@ -178,6 +178,26 @@ function buildCollageAttachment(value) {
   };
 }
 
+async function storeShareCollage(value) {
+  const attachment = buildCollageAttachment(value);
+  if (!attachment) throw new Error("The collage image is required.");
+
+  const connectionString = process.env.STORAGE_CONNECTION_STRING;
+  if (!connectionString) throw new Error("Storage is not configured.");
+
+  const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+  const containerClient = blobServiceClient.getContainerClient("photos");
+  const blobName = `share-collages/baby-shower-collage-${crypto.randomUUID()}.jpg`;
+  const blobClient = containerClient.getBlockBlobClient(blobName);
+  await blobClient.uploadData(Buffer.from(attachment.contentInBase64, "base64"), {
+    blobHTTPHeaders: {
+      blobContentType: attachment.contentType,
+      blobCacheControl: "public, max-age=31536000, immutable"
+    }
+  });
+  return `https://${blobServiceClient.accountName}.blob.core.windows.net/photos/${blobName}`;
+}
+
 function buildVideoMomentUrl(value) {
   const timestamp = String(value || "").trim();
   if (!timestamp) return "";
@@ -1196,6 +1216,19 @@ async function handleEmailCampaign(context, req) {
   const body = req.body || {};
   const mode = String(body.mode || "").toLowerCase();
 
+  if (mode === "collage-upload") {
+    const collageUrl = await storeShareCollage(body.collageBase64);
+    context.res = {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store"
+      },
+      body: JSON.stringify({ success: true, mode: "collage-upload", collageUrl })
+    };
+    return;
+  }
+
   if (mode === "whatsapp") {
     context.res = {
       status: 200,
@@ -1262,7 +1295,7 @@ async function handleEmailCampaign(context, req) {
     context.res = {
       status: 400,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ success: false, error: "Mode must be test, share, whatsapp, or send." })
+      body: JSON.stringify({ success: false, error: "Mode must be collage-upload, test, share, whatsapp, or send." })
     };
     return;
   }
