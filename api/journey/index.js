@@ -10,6 +10,7 @@ const BABY_SHOWER_CAMPAIGN_ID = "email-campaign_babyshower-memories-20260916";
 const BABY_SHOWER_EVENT_ID = "event_1778962966548_06mo";
 const BABY_SHOWER_MEMORIES_URL = "https://www.shravek.com/babyshower-memories.html";
 const BABY_SHOWER_POSTER_URL = "https://shravekjourneyphotos.blob.core.windows.net/photos/baby-shower-film/before-we-met-you-poster.webp?v=20260915";
+const BABY_SHOWER_YOUTUBE_URL = "https://youtu.be/Ifg8JcG7wEM";
 
 function getContainer() {
   const connectionString = process.env.COSMOS_CONNECTION_STRING;
@@ -109,7 +110,7 @@ function siteAccessCookie(name, token, maxAge = SITE_ACCESS_MAX_AGE_SECONDS) {
 }
 
 // Email helper using Azure Communication Services
-async function sendEmail({ to, subject, htmlBody, plainText }) {
+async function sendEmail({ to, subject, htmlBody, plainText, attachments }) {
   const connectionString = process.env.ACS_CONNECTION_STRING;
   const senderAddress = process.env.ACS_SENDER_EMAIL;
   if (!connectionString || !senderAddress) {
@@ -119,11 +120,13 @@ async function sendEmail({ to, subject, htmlBody, plainText }) {
   const emailClient = new EmailClient(connectionString);
   const content = { subject, html: htmlBody };
   if (plainText) content.plainText = plainText;
-  const poller = await emailClient.beginSend({
+  const message = {
     senderAddress,
     content,
     recipients: { to: Array.isArray(to) ? to.map(e => ({ address: e })) : [{ address: to }] }
-  });
+  };
+  if (attachments && attachments.length) message.attachments = attachments;
+  const poller = await emailClient.beginSend(message);
   const result = await poller.pollUntilDone();
   if (result.status !== "Succeeded") {
     throw new Error(`Azure email delivery failed with status ${result.status || "Unknown"}.`);
@@ -149,6 +152,40 @@ function maskEmail(value) {
   if (!local || !domain) return "";
   const visible = local.slice(0, Math.min(2, local.length));
   return `${visible}${"*".repeat(Math.max(2, local.length - visible.length))}@${domain}`;
+}
+
+function validateCollageUrl(value) {
+  if (!value) return "";
+  const url = new URL(String(value));
+  const validHost = url.hostname.toLowerCase() === "shravekjourneyphotos.blob.core.windows.net";
+  const validPath = url.pathname.startsWith("/photos/share-collages/");
+  if (url.protocol !== "https:" || !validHost || !validPath) {
+    throw new Error("The collage URL is invalid.");
+  }
+  return url.toString();
+}
+
+function buildCollageAttachment(value) {
+  if (!value) return null;
+  const base64 = String(value).replace(/^data:image\/jpeg;base64,/, "");
+  if (base64.length > 8 * 1024 * 1024 || !/^[A-Za-z0-9+/]+={0,2}$/.test(base64)) {
+    throw new Error("The collage attachment is invalid or too large.");
+  }
+  return {
+    name: "baby-shower-personalized-collage.jpg",
+    contentType: "image/jpeg",
+    contentInBase64: base64
+  };
+}
+
+function buildVideoMomentUrl(value) {
+  const timestamp = String(value || "").trim();
+  if (!timestamp) return "";
+  const match = timestamp.match(/^(\d{1,2}):([0-5]\d)$/);
+  if (!match) throw new Error("Enter the video moment as minutes:seconds, for example 1:42.");
+  const seconds = (Number(match[1]) * 60) + Number(match[2]);
+  if (seconds > 215) throw new Error("The video moment must be within the 3:35 film.");
+  return `${BABY_SHOWER_YOUTUBE_URL}?t=${seconds}s`;
 }
 
 async function requireAdmin(context, req) {
@@ -185,24 +222,29 @@ async function requireAdmin(context, req) {
   return resources[0];
 }
 
-function buildBabyShowerAnnouncement(recipientName, credentials) {
+function buildBabyShowerAnnouncement(recipientName, credentials, collage = {}) {
   const safeName = escapeHtml(recipientName || "Friend");
   const greetingName = safeName.split(/\s+/)[0] || "Friend";
   const safeAccessUrl = escapeHtml(BABY_SHOWER_MEMORIES_URL);
   const safeUsername = escapeHtml(credentials.username);
   const safePassword = escapeHtml(credentials.password);
+  const collageUrl = validateCollageUrl(collage.url);
+  const videoMomentUrl = buildVideoMomentUrl(collage.videoTimestamp);
+  const safeCollageUrl = escapeHtml(collageUrl);
+  const safeVideoMomentUrl = escapeHtml(videoMomentUrl);
+  const collageAttachment = buildCollageAttachment(collage.contentInBase64);
   const subject = "Our Baby Shower Film & Photos Are Here 🎀";
   const plainText = `Hi ${recipientName || "Friend"},
 
 Our Baby Shower film and complete photo album are ready.
 
-Watch "Before We Met You" and explore the Tiny Toes & Pretty Bows memories:
+${collageUrl ? `We made a small collage featuring memories you were part of:\n${collageUrl}\n\n` : ""}${videoMomentUrl ? `Jump directly to your moment in the film:\n${videoMomentUrl}\n\n` : ""}Watch "Before We Met You" and explore the Tiny Toes & Pretty Bows memories:
 ${BABY_SHOWER_MEMORIES_URL}
 
 Username: ${credentials.username}
 Password: ${credentials.password}
 
-This is a high-quality video, so it may take a little time to render and load. Please stay until the end—you may spot yourself or someone you know in the film.
+Please stay until the end—you may spot yourself or someone you know in the film.
 
 Thank you for filling that beautiful day with your love and blessings.
 
@@ -228,12 +270,18 @@ Vivek & Shraddha`;
                     <p style="margin:10px 0 24px;color:#8d6876;font-family:Georgia,serif;font-size:19px;font-style:italic">Our Baby Shower film &amp; complete album</p>
                     <p style="margin:0 0 18px;color:#4d3c43;font-size:16px;line-height:1.7">Hi ${greetingName},</p>
                     <p style="margin:0 0 28px;color:#67555d;font-size:15px;line-height:1.75">The film and photographs from our celebration are ready. Thank you for filling that beautiful day with laughter, blessings, and so much love for our little one.</p>
+                    ${safeCollageUrl ? `
+                    <a href="${safeCollageUrl}" style="display:block;margin:0 auto 28px;text-decoration:none">
+                      <img src="${safeCollageUrl}" width="536" alt="A personalized collage of Baby Shower memories" style="display:block;width:100%;max-width:536px;height:auto;border:0;border-radius:10px">
+                    </a>` : ""}
+                    ${safeVideoMomentUrl ? `
+                    <a href="${safeVideoMomentUrl}" style="display:inline-block;margin:0 0 14px;padding:12px 20px;border:1px solid #a95773;border-radius:999px;color:#a95773;font-size:12px;font-weight:bold;letter-spacing:1px;text-decoration:none;text-transform:uppercase">Jump to Your Moment in the Film</a><br>` : ""}
                     <a href="${safeAccessUrl}" style="display:inline-block;padding:15px 26px;border-radius:999px;color:#fff;background:#a95773;font-size:12px;font-weight:bold;letter-spacing:1.4px;text-decoration:none;text-transform:uppercase">Watch the Film &amp; Explore Memories</a>
                     <div style="margin:22px auto 0;padding:16px;max-width:360px;border-radius:10px;background:#f8f1f3;color:#67555d;font-size:14px;line-height:1.7">
                       <strong>Username:</strong> ${safeUsername}<br>
                       <strong>Password:</strong> ${safePassword}
                     </div>
-                    <p style="margin:18px 0 0;color:#8d6876;font-size:13px;line-height:1.6"><strong>Please note:</strong> This is a high-quality video, so it may take a little time to render and load. Please stay until the end—you may spot yourself or someone you know in the film.</p>
+                    <p style="margin:18px 0 0;color:#8d6876;font-size:13px;line-height:1.6">Please stay until the end—you may spot yourself or someone you know in the film.</p>
                     <p style="margin:30px 0 0;color:#a38c95;font-family:Georgia,serif;font-size:16px;font-style:italic;line-height:1.6">With love,<br><strong style="color:#8f4c63">Vivek &amp; Shraddha</strong></p>
                   </td>
                 </tr>
@@ -245,21 +293,28 @@ Vivek & Shraddha`;
       </body>
     </html>`;
 
-  return { subject, plainText, htmlBody };
+  return {
+    subject,
+    plainText,
+    htmlBody,
+    attachments: collageAttachment ? [collageAttachment] : undefined
+  };
 }
 
-function buildBabyShowerWhatsAppMessage(recipientName, credentials) {
+function buildBabyShowerWhatsAppMessage(recipientName, credentials, collageUrlValue, videoTimestamp) {
   const name = String(recipientName || "").trim();
   const greeting = name ? `Hi ${name.split(/\s+/)[0]}!` : "Hi!";
+  const collageUrl = validateCollageUrl(collageUrlValue);
+  const videoMomentUrl = buildVideoMomentUrl(videoTimestamp);
   return `${greeting}
 
-Our Baby Shower film and complete photo album are ready:
+${collageUrl ? `We made a little collage with memories you were part of:\n${collageUrl}\n\n` : ""}${videoMomentUrl ? `Jump straight to your moment in the film:\n${videoMomentUrl}\n\n` : ""}Our Baby Shower film and complete photo album are ready:
 ${BABY_SHOWER_MEMORIES_URL}
 
 Username: ${credentials.username}
 Password: ${credentials.password}
 
-This is a high-quality video, so it may take a little time to render and load. Please stay until the end—you may spot yourself or someone you know in the film.
+Please stay until the end—you may spot yourself or someone you know in the film.
 
 With love,
 Vivek & Shraddha`;
@@ -1151,7 +1206,7 @@ async function handleEmailCampaign(context, req) {
       body: JSON.stringify({
         success: true,
         mode: "whatsapp",
-        message: buildBabyShowerWhatsAppMessage(body.name, babyShowerAccess)
+        message: buildBabyShowerWhatsAppMessage(body.name, babyShowerAccess, body.collageUrl, body.videoTimestamp)
       })
     };
     return;
@@ -1189,7 +1244,11 @@ async function handleEmailCampaign(context, req) {
       return;
     }
 
-    const message = buildBabyShowerAnnouncement(body.name || "Friend", babyShowerAccess);
+    const message = buildBabyShowerAnnouncement(body.name || "Friend", babyShowerAccess, {
+      url: body.collageUrl,
+      contentInBase64: body.collageBase64,
+      videoTimestamp: body.videoTimestamp
+    });
     const result = await sendEmail({ to: shareEmail, ...message });
     context.res = {
       status: 200,
@@ -1632,6 +1691,9 @@ async function savePhotoWithAlbum(context, url, caption, album, aiTags, faceCoun
 // --- Blob Upload SAS URL Generator ---
 
 async function handleGetUploadUrl(context, req) {
+  const admin = await requireAdmin(context, req);
+  if (!admin) return;
+
   const { fileName, contentType, folder } = req.body || {};
   if (!fileName) {
     context.res = { status: 400, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: "fileName is required." }) };

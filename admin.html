@@ -400,7 +400,7 @@
 
         <div class="admin-card" style="margin-top:2rem">
           <h3 class="admin-card__title">Share the Video Privately</h3>
-          <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem">Send one person the Baby Shower page link with its separate username and password. The message also explains that the high-quality film may take time to load and asks them to watch until the end.</p>
+          <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem">Send one person the Baby Shower page link and login details. Optionally include a personalized collage of photos they appear in so the invitation feels immediately familiar.</p>
           <div class="form-row">
             <div class="form-group">
               <label>Recipient Email Address</label>
@@ -410,6 +410,38 @@
               <label>Recipient Name</label>
               <input type="text" id="video-share-name" placeholder="Friend" />
             </div>
+          </div>
+          <div class="form-group" style="max-width:320px">
+            <label>Where They Appear in the Video (Optional)</label>
+            <input type="text" id="video-share-timestamp" inputmode="numeric" placeholder="e.g. 1:42" />
+            <small style="color:var(--muted)">Adds a direct “jump to your moment” YouTube link.</small>
+          </div>
+          <label class="share-collage-toggle">
+            <input type="checkbox" id="video-share-include-collage" />
+            <span>
+              <strong>Include a personalized photo collage</strong>
+              <small>Select up to four photos featuring this person. The collage appears in email and is linked in the WhatsApp message.</small>
+            </span>
+          </label>
+          <div class="share-collage-builder" id="video-share-collage-builder" hidden>
+            <div class="share-collage-toolbar">
+              <div class="form-group">
+                <label for="share-collage-search">Find Baby Shower Photos</label>
+                <input type="search" id="share-collage-search" placeholder="Search by photo number or filename" />
+              </div>
+              <span id="share-collage-selection-count">0 of 4 selected</span>
+            </div>
+            <div class="share-collage-photo-grid" id="share-collage-photo-grid"></div>
+            <button type="button" class="btn btn--outline" id="share-collage-load-more" style="width:auto;padding:0.5rem 1rem;margin-top:0.75rem" onclick="loadMoreShareCollagePhotos()">Show More Photos</button>
+            <div class="share-collage-preview">
+              <canvas id="share-collage-canvas" width="1080" height="1350" aria-label="Personalized collage preview"></canvas>
+              <div>
+                <p id="share-collage-preview-status">Select 1–4 photos to create the collage.</p>
+                <button type="button" class="btn btn--outline" id="share-collage-download" style="width:auto;padding:0.5rem 1rem" onclick="downloadShareCollage()" disabled>Download Preview</button>
+                <button type="button" class="btn btn--outline" style="width:auto;padding:0.5rem 1rem" onclick="clearShareCollage()">Clear Photos</button>
+              </div>
+            </div>
+            <p class="admin-hint share-collage-privacy">Each generated collage uses an unguessable link but is stored in the public photo container so WhatsApp and email clients can display it.</p>
           </div>
           <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1rem">
             <button type="button" class="btn btn--dark" id="video-share-send" style="width:auto;padding:0.65rem 1.25rem" onclick="sendPrivateVideoLink()">Send by Email</button>
@@ -563,6 +595,7 @@
     </main>
   </div>
 
+  <script src="js/pregnancy-media.js"></script>
   <script src="js/admin.js"></script>
 </body>
 </html>

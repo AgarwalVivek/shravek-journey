@@ -51,6 +51,290 @@
   }
 
   let currentEmailCampaign;
+  const maxShareCollagePhotos = 4;
+  const shareCollagePhotos = ((window.PREGNANCY_MEDIA && window.PREGNANCY_MEDIA['month-7']) || [])
+    .filter(photo => photo.type === 'image')
+    .map((photo, index) => ({ ...photo, index }));
+  let selectedShareCollagePhotos = [];
+  let visibleShareCollagePhotos = 72;
+  let collageRenderVersion = 0;
+  let cachedShareCollage;
+  let shareCollagePreviewError;
+
+  function invalidateShareCollage() {
+    cachedShareCollage = null;
+  }
+
+  function drawImageCover(context, image, x, y, width, height) {
+    const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);
+    const sourceWidth = width / scale;
+    const sourceHeight = height / scale;
+    const sourceX = (image.naturalWidth - sourceWidth) / 2;
+    const sourceY = (image.naturalHeight - sourceHeight) / 2;
+    context.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
+  }
+
+  function loadCollageImage(url) {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.crossOrigin = 'anonymous';
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error('One of the selected photos could not be loaded.'));
+      image.src = url;
+    });
+  }
+
+  function collagePhotoFrames(count) {
+    const left = 70;
+    const top = 245;
+    const width = 940;
+    const height = 800;
+    const gap = 18;
+    const halfWidth = (width - gap) / 2;
+    const halfHeight = (height - gap) / 2;
+
+    if (count === 1) return [{ x: left, y: top, width, height }];
+    if (count === 2) {
+      return [
+        { x: left, y: top, width: halfWidth, height },
+        { x: left + halfWidth + gap, y: top, width: halfWidth, height }
+      ];
+    }
+    if (count === 3) {
+      return [
+        { x: left, y: top, width, height: halfHeight },
+        { x: left, y: top + halfHeight + gap, width: halfWidth, height: halfHeight },
+        { x: left + halfWidth + gap, y: top + halfHeight + gap, width: halfWidth, height: halfHeight }
+      ];
+    }
+    return [
+      { x: left, y: top, width: halfWidth, height: halfHeight },
+      { x: left + halfWidth + gap, y: top, width: halfWidth, height: halfHeight },
+      { x: left, y: top + halfHeight + gap, width: halfWidth, height: halfHeight },
+      { x: left + halfWidth + gap, y: top + halfHeight + gap, width: halfWidth, height: halfHeight }
+    ];
+  }
+
+  async function renderShareCollagePreview() {
+    const canvas = document.getElementById('share-collage-canvas');
+    const previewStatus = document.getElementById('share-collage-preview-status');
+    const downloadButton = document.getElementById('share-collage-download');
+    if (!canvas || !previewStatus || !downloadButton) return;
+
+    const renderVersion = ++collageRenderVersion;
+    shareCollagePreviewError = null;
+    const context = canvas.getContext('2d');
+    const recipientName = document.getElementById('video-share-name').value.trim();
+    const firstName = (recipientName ? recipientName.split(/\s+/)[0] : 'Friend').slice(0, 20);
+    context.fillStyle = '#f8f1f3';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.textAlign = 'center';
+    context.fillStyle = '#b96580';
+    context.font = '500 24px Arial, sans-serif';
+    context.fillText('TINY TOES & PRETTY BOWS', canvas.width / 2, 72);
+    context.fillStyle = '#2a1d23';
+    context.font = '54px Georgia, serif';
+    context.fillText(`${firstName}, you were part of our story`, canvas.width / 2, 145);
+    context.fillStyle = '#806671';
+    context.font = 'italic 28px Georgia, serif';
+    context.fillText('A few memories from our Baby Shower', canvas.width / 2, 195);
+
+    if (!selectedShareCollagePhotos.length) {
+      context.strokeStyle = '#d7c6cc';
+      context.lineWidth = 3;
+      context.setLineDash([14, 12]);
+      context.strokeRect(70, 245, 940, 800);
+      context.setLineDash([]);
+      context.fillStyle = '#9b858e';
+      context.font = '32px Arial, sans-serif';
+      context.fillText('Select up to four photos', canvas.width / 2, 650);
+      context.font = '24px Arial, sans-serif';
+      context.fillText('that feature this guest', canvas.width / 2, 692);
+      previewStatus.textContent = 'Select 1–4 photos to create the collage.';
+      previewStatus.style.color = 'var(--muted)';
+      downloadButton.disabled = true;
+    } else {
+      previewStatus.textContent = 'Building preview...';
+      downloadButton.disabled = true;
+      try {
+        const images = await Promise.all(selectedShareCollagePhotos.map(photo => loadCollageImage(photo.url)));
+        if (renderVersion !== collageRenderVersion) return;
+        const frames = collagePhotoFrames(images.length);
+        images.forEach((image, index) => {
+          const frame = frames[index];
+          context.save();
+          context.beginPath();
+          context.rect(frame.x, frame.y, frame.width, frame.height);
+          context.clip();
+          drawImageCover(context, image, frame.x, frame.y, frame.width, frame.height);
+          context.restore();
+        });
+        context.fillStyle = '#2a1d23';
+        context.font = '46px Georgia, serif';
+        context.fillText('Watch “Before We Met You”', canvas.width / 2, 1135);
+        context.fillStyle = '#806671';
+        context.font = '26px Arial, sans-serif';
+        context.fillText('Find yourself in the film and complete photo album', canvas.width / 2, 1190);
+        context.fillStyle = '#a95773';
+        context.font = '500 25px Arial, sans-serif';
+        context.fillText('shravek.com/babyshower-memories.html', canvas.width / 2, 1260);
+        previewStatus.textContent = 'Collage ready. It will be personalized again before sending.';
+        previewStatus.style.color = 'var(--muted)';
+        downloadButton.disabled = false;
+      } catch (error) {
+        shareCollagePreviewError = error;
+        previewStatus.textContent = error.message;
+        previewStatus.style.color = '#991b1b';
+        downloadButton.disabled = true;
+      }
+    }
+  }
+
+  function renderShareCollagePhotoGrid() {
+    const grid = document.getElementById('share-collage-photo-grid');
+    const loadMoreButton = document.getElementById('share-collage-load-more');
+    const count = document.getElementById('share-collage-selection-count');
+    if (!grid || !loadMoreButton || !count) return;
+
+    const query = document.getElementById('share-collage-search').value.trim().toLowerCase();
+    const filtered = shareCollagePhotos.filter(photo => {
+      const searchable = `${photo.order} ${photo.sourceName || ''} ${photo.alt || ''}`.toLowerCase();
+      return !query || searchable.includes(query);
+    });
+    const visible = filtered.slice(0, visibleShareCollagePhotos);
+
+    grid.innerHTML = visible.map(photo => {
+      const selected = selectedShareCollagePhotos.some(item => item.url === photo.url);
+      return `
+        <button type="button" class="share-collage-photo${selected ? ' is-selected' : ''}" onclick="toggleShareCollagePhoto(${photo.index})" aria-pressed="${selected}" title="${escapeAdminHtml(photo.sourceName || photo.alt)}">
+          <img src="${photo.url}" alt="${escapeAdminHtml(photo.alt || `Baby Shower photo ${photo.order}`)}" loading="lazy" />
+          <span aria-hidden="true">✓</span>
+        </button>
+      `;
+    }).join('') || '<p style="color:var(--muted)">No matching photos.</p>';
+
+    count.textContent = `${selectedShareCollagePhotos.length} of ${maxShareCollagePhotos} selected`;
+    loadMoreButton.hidden = visible.length >= filtered.length;
+  }
+
+  window.toggleShareCollagePhoto = function (index) {
+    const photo = shareCollagePhotos.find(item => item.index === index);
+    if (!photo) return;
+    const selectedIndex = selectedShareCollagePhotos.findIndex(item => item.url === photo.url);
+    if (selectedIndex >= 0) {
+      selectedShareCollagePhotos.splice(selectedIndex, 1);
+    } else if (selectedShareCollagePhotos.length < maxShareCollagePhotos) {
+      selectedShareCollagePhotos.push(photo);
+    } else {
+      const status = document.getElementById('video-share-status');
+      status.textContent = 'Choose up to four photos for one clear, readable collage.';
+      status.style.color = '#9a6718';
+      return;
+    }
+    invalidateShareCollage();
+    renderShareCollagePhotoGrid();
+    renderShareCollagePreview();
+  };
+
+  window.loadMoreShareCollagePhotos = function () {
+    visibleShareCollagePhotos += 72;
+    renderShareCollagePhotoGrid();
+  };
+
+  window.clearShareCollage = function () {
+    selectedShareCollagePhotos = [];
+    invalidateShareCollage();
+    renderShareCollagePhotoGrid();
+    renderShareCollagePreview();
+  };
+
+  function canvasToBlob(canvas) {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(blob => {
+        if (blob) resolve(blob);
+        else reject(new Error('The collage could not be generated.'));
+      }, 'image/jpeg', 0.88);
+    });
+  }
+
+  function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result).split(',')[1]);
+      reader.onerror = () => reject(new Error('The collage could not be prepared for email.'));
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  async function createShareCollageBlob() {
+    if (!selectedShareCollagePhotos.length) {
+      throw new Error('Select at least one photo for the collage.');
+    }
+    await renderShareCollagePreview();
+    if (shareCollagePreviewError) throw shareCollagePreviewError;
+    return canvasToBlob(document.getElementById('share-collage-canvas'));
+  }
+
+  async function uploadShareCollage(blob) {
+    const uniqueId = window.crypto && window.crypto.randomUUID
+      ? window.crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const fileName = `baby-shower-collage-${uniqueId}.jpg`;
+    const sasResponse = await fetch(API + '/upload-url', {
+      method: 'POST',
+      headers: adminHeaders(),
+      body: JSON.stringify({ fileName, contentType: 'image/jpeg', folder: 'share-collages' })
+    });
+    const sasData = await sasResponse.json();
+    if (!sasResponse.ok || !sasData.success) {
+      throw new Error(sasData.error || 'Unable to prepare the collage upload.');
+    }
+
+    const uploadResponse = await fetch(sasData.uploadUrl, {
+      method: 'PUT',
+      headers: { 'x-ms-blob-type': 'BlockBlob', 'Content-Type': 'image/jpeg' },
+      body: blob
+    });
+    if (!uploadResponse.ok) throw new Error(`Collage upload failed (${uploadResponse.status}).`);
+    return sasData.blobUrl;
+  }
+
+  async function prepareShareCollage() {
+    const includeCollage = document.getElementById('video-share-include-collage').checked;
+    if (!includeCollage) return null;
+    if (!selectedShareCollagePhotos.length) {
+      throw new Error('Select at least one photo, or turn off the collage option.');
+    }
+
+    const recipientName = document.getElementById('video-share-name').value.trim();
+    const signature = `${recipientName}|${selectedShareCollagePhotos.map(photo => photo.url).join('|')}`;
+    if (cachedShareCollage && cachedShareCollage.signature === signature) return cachedShareCollage;
+
+    const blob = await createShareCollageBlob();
+    const [url, base64] = await Promise.all([
+      uploadShareCollage(blob),
+      blobToBase64(blob)
+    ]);
+    cachedShareCollage = { signature, url, base64, blob };
+    return cachedShareCollage;
+  }
+
+  window.downloadShareCollage = async function () {
+    const status = document.getElementById('video-share-status');
+    try {
+      const blob = await createShareCollageBlob();
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'baby-shower-personalized-collage.jpg';
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+      status.textContent = 'Collage downloaded.';
+      status.style.color = '#2a7c4f';
+    } catch (error) {
+      status.textContent = error.message;
+      status.style.color = '#991b1b';
+    }
+  };
 
   window.loadEmailCampaign = async function () {
     const status = document.getElementById('email-campaign-status');
@@ -120,6 +404,7 @@
   window.sendPrivateVideoLink = async function () {
     const email = document.getElementById('video-share-email').value.trim();
     const name = document.getElementById('video-share-name').value.trim();
+    const videoTimestamp = document.getElementById('video-share-timestamp').value.trim();
     const status = document.getElementById('video-share-status');
     const button = document.getElementById('video-share-send');
 
@@ -130,21 +415,36 @@
     }
 
     button.disabled = true;
-    status.textContent = 'Sending the Baby Shower link and login details...';
+    status.textContent = 'Preparing the personalized invitation...';
     status.style.color = 'var(--muted)';
 
     try {
+      const collage = await prepareShareCollage();
+      status.textContent = 'Sending the Baby Shower invitation...';
       const response = await fetch(API + '/email-campaign', {
         method: 'POST',
         headers: adminHeaders(),
-        body: JSON.stringify({ mode: 'share', email, name })
+        body: JSON.stringify({
+          mode: 'share',
+          email,
+          name,
+          videoTimestamp,
+          collageUrl: collage && collage.url,
+          collageBase64: collage && collage.base64
+        })
       });
       const data = await response.json();
       if (!response.ok || !data.success) throw new Error(data.error || 'Baby Shower link could not be sent.');
-      status.textContent = `Baby Shower link and login details sent to ${email}.`;
+      status.textContent = collage
+        ? `Personalized collage, Baby Shower link, and login details sent to ${email}.`
+        : `Baby Shower link and login details sent to ${email}.`;
       status.style.color = '#2a7c4f';
       document.getElementById('video-share-email').value = '';
       document.getElementById('video-share-name').value = '';
+      document.getElementById('video-share-timestamp').value = '';
+      document.getElementById('video-share-include-collage').checked = false;
+      document.getElementById('video-share-collage-builder').hidden = true;
+      window.clearShareCollage();
     } catch (error) {
       status.textContent = error.message;
       status.style.color = '#991b1b';
@@ -155,6 +455,7 @@
 
   window.shareVideoOnWhatsApp = async function () {
     const name = document.getElementById('video-share-name').value.trim();
+    const videoTimestamp = document.getElementById('video-share-timestamp').value.trim();
     const status = document.getElementById('video-share-status');
     const button = document.getElementById('video-share-whatsapp');
     const whatsappWindow = window.open('about:blank', '_blank');
@@ -168,21 +469,24 @@
     whatsappWindow.opener = null;
     whatsappWindow.document.body.textContent = 'Preparing WhatsApp...';
     button.disabled = true;
-    status.textContent = 'Preparing the WhatsApp invitation...';
+    status.textContent = 'Preparing the personalized WhatsApp invitation...';
     status.style.color = 'var(--muted)';
 
     try {
+      const collage = await prepareShareCollage();
       const response = await fetch(API + '/email-campaign', {
         method: 'POST',
         headers: adminHeaders(),
-        body: JSON.stringify({ mode: 'whatsapp', name })
+        body: JSON.stringify({ mode: 'whatsapp', name, videoTimestamp, collageUrl: collage && collage.url })
       });
       const data = await response.json();
       if (!response.ok || !data.success || !data.message) {
         throw new Error(data.error || 'WhatsApp invitation could not be prepared.');
       }
       whatsappWindow.location.replace(`https://wa.me/?text=${encodeURIComponent(data.message)}`);
-      status.textContent = 'WhatsApp opened with the invitation ready to send.';
+      status.textContent = collage
+        ? 'WhatsApp opened with the personalized collage link and invitation ready to send.'
+        : 'WhatsApp opened with the invitation ready to send.';
       status.style.color = '#2a7c4f';
     } catch (error) {
       whatsappWindow.close();
@@ -685,7 +989,7 @@
       // Get SAS upload URL from API
       const sasRes = await fetch(API + '/upload-url', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: adminHeaders(),
         body: JSON.stringify({ fileName: 'hero-' + side + '-' + Date.now() + '.' + file.name.split('.').pop(), contentType: file.type, folder: 'hero' })
       });
       const sasData = await sasRes.json();
@@ -952,6 +1256,29 @@
   };
 
   // Load settings and 2FA status on page load
+  const collageToggle = document.getElementById('video-share-include-collage');
+  const collageSearch = document.getElementById('share-collage-search');
+  const recipientNameInput = document.getElementById('video-share-name');
+  if (collageToggle) {
+    collageToggle.addEventListener('change', () => {
+      document.getElementById('video-share-collage-builder').hidden = !collageToggle.checked;
+      invalidateShareCollage();
+    });
+  }
+  if (collageSearch) {
+    collageSearch.addEventListener('input', () => {
+      visibleShareCollagePhotos = 72;
+      renderShareCollagePhotoGrid();
+    });
+  }
+  if (recipientNameInput) {
+    recipientNameInput.addEventListener('input', () => {
+      invalidateShareCollage();
+      renderShareCollagePreview();
+    });
+  }
+  renderShareCollagePhotoGrid();
+  renderShareCollagePreview();
   loadEmailCampaign();
   loadSettings();
   load2FAStatus();
