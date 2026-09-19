@@ -10,6 +10,7 @@ const BABY_SHOWER_CAMPAIGN_ID = "email-campaign_babyshower-memories-20260916";
 const BABY_SHOWER_SHARE_CARD_CATEGORY = "babyshower-share-card";
 const BABY_SHOWER_EVENT_ID = "event_1778962966548_06mo";
 const BABY_SHOWER_MEMORIES_URL = "https://www.shravek.com/babyshower-memories.html";
+const BABY_SHOWER_ACCESS_URL = "https://www.shravek.com/access";
 const BABY_SHOWER_POSTER_URL = "https://shravekjourneyphotos.blob.core.windows.net/photos/baby-shower-film/before-we-met-you-poster.webp?v=20260915";
 const BABY_SHOWER_YOUTUBE_URL = "https://youtu.be/Ifg8JcG7wEM";
 
@@ -32,6 +33,7 @@ function getContainer() {
 const SITE_ACCESS_COOKIE = "shravek_family_access";
 const BABY_SHOWER_ACCESS_COOKIE = "shravek_babyshower_access";
 const SITE_ACCESS_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
+const BABY_SHOWER_INVITE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 
 function getSiteAccessConfig() {
   const username = process.env.SITE_ACCESS_USERNAME;
@@ -80,17 +82,17 @@ function getCookies(req) {
   }, {});
 }
 
-function createSiteAccessToken(username, secret, scope) {
+function createSiteAccessToken(username, secret, scope, maxAgeSeconds = SITE_ACCESS_MAX_AGE_SECONDS) {
   const payload = Buffer.from(JSON.stringify({
     username,
     scope,
-    expiresAt: Date.now() + (SITE_ACCESS_MAX_AGE_SECONDS * 1000)
+    expiresAt: Date.now() + (maxAgeSeconds * 1000)
   })).toString("base64url");
   const signature = crypto.createHmac("sha256", secret).update(payload).digest("base64url");
   return `${payload}.${signature}`;
 }
 
-function verifySiteAccessToken(token, secret, scope) {
+function verifySiteAccessToken(token, secret, scope, expectedUsername) {
   if (!token) return false;
   const [payload, signature, extra] = token.split(".");
   if (!payload || !signature || extra) return false;
@@ -100,7 +102,9 @@ function verifySiteAccessToken(token, secret, scope) {
 
   try {
     const data = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
-    return data.scope === scope && data.expiresAt > Date.now();
+    return data.scope === scope &&
+      data.expiresAt > Date.now() &&
+      (!expectedUsername || safeEqual(data.username, expectedUsername));
   } catch {
     return false;
   }
@@ -108,6 +112,17 @@ function verifySiteAccessToken(token, secret, scope) {
 
 function siteAccessCookie(name, token, maxAge = SITE_ACCESS_MAX_AGE_SECONDS) {
   return `${name}=${token}; Max-Age=${maxAge}; Path=/; HttpOnly; Secure; SameSite=Lax`;
+}
+
+function buildBabyShowerAccessLink(credentials) {
+  const invite = createSiteAccessToken(
+    credentials.username,
+    credentials.secret,
+    "babyshower-invite",
+    BABY_SHOWER_INVITE_MAX_AGE_SECONDS
+  );
+  const returnTo = encodeURIComponent("/babyshower-memories.html");
+  return `${BABY_SHOWER_ACCESS_URL}?return=${returnTo}&invite=${encodeURIComponent(invite)}`;
 }
 
 // Email helper using Azure Communication Services
@@ -353,11 +368,13 @@ function buildBabyShowerWhatsAppMessage(recipientName, credentials, collageUrlVa
   const greeting = name ? `Hi ${name.split(/\s+/)[0]}!` : "Hi!";
   const collageUrl = validateCollageUrl(collageUrlValue);
   const videoMomentUrl = buildVideoMomentUrl(videoTimestamp);
+  const accessUrl = buildBabyShowerAccessLink(credentials);
   return `${greeting}
 
 ${collageUrl ? `We made a little collage with memories you were part of:\n${collageUrl}\n\n` : ""}${videoMomentUrl ? `Jump straight to your moment in the film:\n${videoMomentUrl}\n\n` : ""}Our Baby Shower film and complete photo album are ready:
-${BABY_SHOWER_MEMORIES_URL}
+${accessUrl}
 
+The link signs you in automatically. If needed, use:
 Username: ${credentials.username}
 Password: ${credentials.password}
 
@@ -520,6 +537,10 @@ module.exports = async function (context, req) {
 
       case "site-login":
         if (req.method === "POST") return await handleSiteLogin(context, req);
+        break;
+
+      case "site-invite-login":
+        if (req.method === "POST") return await handleSiteInviteLogin(context, req);
         break;
 
       case "site-auth":
@@ -960,6 +981,40 @@ async function handleSiteLogin(context, req) {
       "Content-Type": "application/json",
       "Cache-Control": "no-store",
       "Set-Cookie": siteAccessCookie(cookieName, token)
+    },
+    body: JSON.stringify({ success: true })
+  };
+}
+
+async function handleSiteInviteLogin(context, req) {
+  const { invite, page } = req.body || {};
+  if (!isBabyShowerPage(page)) {
+    context.res = {
+      status: 400,
+      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+      body: JSON.stringify({ success: false, error: "This invitation link is only valid for the Baby Shower pages." })
+    };
+    return;
+  }
+
+  const config = getBabyShowerAccessConfig();
+  if (!verifySiteAccessToken(invite, config.secret, "babyshower-invite", config.username)) {
+    context.res = {
+      status: 401,
+      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+      body: JSON.stringify({ success: false, error: "This invitation link is invalid or has expired." })
+    };
+    return;
+  }
+
+  const sessionToken = createSiteAccessToken(config.username, config.secret, "babyshower");
+  context.res = {
+    status: 200,
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+      "Referrer-Policy": "no-referrer",
+      "Set-Cookie": siteAccessCookie(BABY_SHOWER_ACCESS_COOKIE, sessionToken)
     },
     body: JSON.stringify({ success: true })
   };
