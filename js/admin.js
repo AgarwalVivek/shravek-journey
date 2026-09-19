@@ -52,9 +52,16 @@
 
   let currentEmailCampaign;
   const maxShareCollagePhotos = 4;
+  const firstRecentlyAddedSharePhoto = 406;
   const shareCollagePhotos = ((window.PREGNANCY_MEDIA && window.PREGNANCY_MEDIA['month-7']) || [])
     .filter(photo => photo.type === 'image')
-    .map((photo, index) => ({ ...photo, index }));
+    .map((photo, index) => ({ ...photo, index }))
+    .sort((left, right) => {
+      const leftIsRecent = left.order >= firstRecentlyAddedSharePhoto;
+      const rightIsRecent = right.order >= firstRecentlyAddedSharePhoto;
+      if (leftIsRecent !== rightIsRecent) return leftIsRecent ? -1 : 1;
+      return left.order - right.order;
+    });
   let selectedShareCollagePhotos = [];
   let visibleShareCollagePhotos = 72;
   let collageRenderVersion = 0;
