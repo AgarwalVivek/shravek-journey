@@ -7,12 +7,20 @@
   const status = document.getElementById('memories-load-status');
   const preloaderNote = document.getElementById('memories-load-note');
   const gallery = document.getElementById('babyshower-gallery');
+  const youtubePlayer = document.getElementById('babyshower-youtube-player');
   const lightbox = document.getElementById('memories-lightbox');
   const lightboxImage = lightbox.querySelector('.memories-lightbox__image');
   const lightboxCounter = lightbox.querySelector('.memories-lightbox__counter');
   const smoothProgress = window.createSmoothProgress(progressBar);
   let activeIndex = 0;
   let preloaderMessageIndex = 0;
+
+  const requestedStart = Number(new URLSearchParams(window.location.search).get('start'));
+  if (youtubePlayer && Number.isInteger(requestedStart) && requestedStart > 0 && requestedStart <= 215) {
+    const playerUrl = new URL(youtubePlayer.src);
+    playerUrl.searchParams.set('start', String(requestedStart));
+    youtubePlayer.src = playerUrl.toString();
+  }
   const loadingActions = [
     'Polishing',
     'Bringing into focus',

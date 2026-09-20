@@ -12,7 +12,6 @@ const BABY_SHOWER_EVENT_ID = "event_1778962966548_06mo";
 const BABY_SHOWER_MEMORIES_URL = "https://www.shravek.com/babyshower-memories.html";
 const BABY_SHOWER_ACCESS_URL = "https://www.shravek.com/access";
 const BABY_SHOWER_POSTER_URL = "https://shravekjourneyphotos.blob.core.windows.net/photos/baby-shower-film/before-we-met-you-poster.webp?v=20260915";
-const BABY_SHOWER_YOUTUBE_URL = "https://youtu.be/Ifg8JcG7wEM";
 
 function getContainer() {
   const connectionString = process.env.COSMOS_CONNECTION_STRING;
@@ -114,14 +113,19 @@ function siteAccessCookie(name, token, maxAge = SITE_ACCESS_MAX_AGE_SECONDS) {
   return `${name}=${token}; Max-Age=${maxAge}; Path=/; HttpOnly; Secure; SameSite=Lax`;
 }
 
-function buildBabyShowerAccessLink(credentials) {
+function buildBabyShowerAccessLink(credentials, videoTimestamp) {
   const invite = createSiteAccessToken(
     credentials.username,
     credentials.secret,
     "babyshower-invite",
     BABY_SHOWER_INVITE_MAX_AGE_SECONDS
   );
-  const returnTo = encodeURIComponent("/babyshower-memories.html");
+  const videoMomentUrl = buildVideoMomentUrl(videoTimestamp);
+  const momentUrl = videoMomentUrl ? new URL(videoMomentUrl) : null;
+  const returnPath = momentUrl
+    ? momentUrl.pathname + momentUrl.search + momentUrl.hash
+    : "/babyshower-memories.html#film";
+  const returnTo = encodeURIComponent(returnPath);
   return `${BABY_SHOWER_ACCESS_URL}?return=${returnTo}&invite=${encodeURIComponent(invite)}`;
 }
 
@@ -221,7 +225,7 @@ function buildVideoMomentUrl(value) {
   if (!match) throw new Error("Enter the video moment as minutes:seconds, for example 1:42.");
   const seconds = (Number(match[1]) * 60) + Number(match[2]);
   if (seconds > 215) throw new Error("The video moment must be within the 3:35 film.");
-  return `${BABY_SHOWER_YOUTUBE_URL}?t=${seconds}s`;
+  return `${BABY_SHOWER_MEMORIES_URL}?start=${seconds}#film`;
 }
 
 function normalizeWhatsAppPhone(value) {
@@ -287,11 +291,13 @@ async function requireAdmin(context, req) {
 function buildBabyShowerAnnouncement(recipientName, credentials, collage = {}) {
   const safeName = escapeHtml(recipientName || "Friend");
   const greetingName = safeName.split(/\s+/)[0] || "Friend";
-  const safeAccessUrl = escapeHtml(BABY_SHOWER_MEMORIES_URL);
+  const videoTimestamp = String(collage.videoTimestamp || "").trim();
+  const accessUrl = buildBabyShowerAccessLink(credentials, videoTimestamp);
+  const safeAccessUrl = escapeHtml(accessUrl);
   const safeUsername = escapeHtml(credentials.username);
   const safePassword = escapeHtml(credentials.password);
   const collageUrl = validateCollageUrl(collage.url);
-  const videoMomentUrl = buildVideoMomentUrl(collage.videoTimestamp);
+  const videoMomentUrl = videoTimestamp ? accessUrl : "";
   const safeCollageUrl = escapeHtml(collageUrl);
   const safeVideoMomentUrl = escapeHtml(videoMomentUrl);
   const collageAttachment = buildCollageAttachment(collage.contentInBase64);
@@ -300,8 +306,8 @@ function buildBabyShowerAnnouncement(recipientName, credentials, collage = {}) {
 
 Our Baby Shower film and complete photo album are ready.
 
-${collageUrl ? `We made a small collage featuring memories you were part of:\n${collageUrl}\n\n` : ""}${videoMomentUrl ? `Jump directly to your moment in the film:\n${videoMomentUrl}\n\n` : ""}Watch "Before We Met You" and explore the Tiny Toes & Pretty Bows memories:
-${BABY_SHOWER_MEMORIES_URL}
+${collageUrl ? `We made a small collage featuring memories you were part of:\n${collageUrl}\n\n` : ""}${videoMomentUrl ? `Open the website directly at your moment in the embedded film:\n${videoMomentUrl}\n\n` : ""}Watch "Before We Met You" inside our website and explore the Tiny Toes & Pretty Bows memories:
+${accessUrl}
 
 Username: ${credentials.username}
 Password: ${credentials.password}
@@ -367,12 +373,11 @@ function buildBabyShowerWhatsAppMessage(recipientName, credentials, collageUrlVa
   const name = String(recipientName || "").trim();
   const greeting = name ? `Hi ${name.split(/\s+/)[0]}!` : "Hi!";
   const collageUrl = validateCollageUrl(collageUrlValue);
-  const videoMomentUrl = buildVideoMomentUrl(videoTimestamp);
-  const accessUrl = buildBabyShowerAccessLink(credentials);
+  const normalizedTimestamp = String(videoTimestamp || "").trim();
+  const accessUrl = buildBabyShowerAccessLink(credentials, normalizedTimestamp);
   return `${greeting}
 
-${collageUrl ? `We made a little collage with memories you were part of:\n${collageUrl}\n\n` : ""}${videoMomentUrl ? `Jump straight to your moment in the film:\n${videoMomentUrl}\n\n` : ""}Our Baby Shower film and complete photo album are ready:
-${accessUrl}
+${collageUrl ? `We made a little collage with memories you were part of:\n${collageUrl}\n\n` : ""}${normalizedTimestamp ? "This opens our website directly at your moment in the film:\n" : "Our Baby Shower film and complete photo album are ready on our website:\n"}${accessUrl}
 
 The link signs you in automatically. If needed, use:
 Username: ${credentials.username}
