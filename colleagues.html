@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="js/site-access.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-MNEW54SWR1"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-MNEW54SWR1');</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
+  <meta name="description" content="A gallery celebrating the friends and colleagues who became part of our wider journey." />
+  <meta property="og:title" content="The People Beside Us — Shravek Journey" />
+  <meta property="og:description" content="Friends, colleagues, and the moments we shared along the way." />
+  <meta property="og:image" content="https://shravekjourneyphotos.blob.core.windows.net/photos/colleagues/colleague-01.webp" />
+  <meta property="og:url" content="https://www.shravek.com/colleagues" />
+  <meta property="og:type" content="website" />
+  <title>The People Beside Us — Shravek Journey</title>
+  <link rel="icon" type="image/png" href="images/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://shravekjourneyphotos.blob.core.windows.net" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/colleagues.css" />
+</head>
+<body>
+  <nav class="colleagues-nav">
+    <a class="colleagues-nav__logo" href="index.html">Shravek</a>
+    <div class="colleagues-nav__links">
+      <a href="index.html">Our Story</a>
+      <a href="#gallery">Gallery</a>
+    </div>
+  </nav>
+
+  <main>
+    <header class="colleagues-hero">
+      <div class="colleagues-hero__content">
+        <p class="colleagues-eyebrow">Friends &amp; Colleagues</p>
+        <h1>The People<br /><em>Beside Us</em></h1>
+        <p>Work brought us together. Shared days, conversations, laughter, and memories made the connection mean much more.</p>
+        <a class="colleagues-button" href="#gallery">Explore the album</a>
+      </div>
+    </header>
+
+    <section class="colleagues-intro" aria-labelledby="colleagues-intro-title">
+      <p class="colleagues-eyebrow">A chapter beyond milestones</p>
+      <h2 id="colleagues-intro-title">The company we keep becomes part of the story we tell.</h2>
+      <p>For the colleagues who became friends, and for the ordinary moments that became memories worth keeping.</p>
+    </section>
+
+    <section class="colleagues-gallery-section" id="gallery" aria-labelledby="colleagues-gallery-title">
+      <div class="colleagues-gallery-heading">
+        <p class="colleagues-eyebrow">September 24, 2026</p>
+        <h2 id="colleagues-gallery-title">Together, outside the office</h2>
+        <p>Select a photograph to see the complete moment.</p>
+      </div>
+      <div class="colleagues-gallery" id="colleagues-gallery"></div>
+    </section>
+  </main>
+
+  <div class="colleagues-lightbox" id="colleagues-lightbox" role="dialog" aria-modal="true" aria-label="Colleague photograph" hidden>
+    <button class="colleagues-lightbox__close" type="button" aria-label="Close photograph">&times;</button>
+    <button class="colleagues-lightbox__arrow colleagues-lightbox__arrow--previous" type="button" aria-label="Previous photograph">&#8249;</button>
+    <img class="colleagues-lightbox__image" alt="" />
+    <button class="colleagues-lightbox__arrow colleagues-lightbox__arrow--next" type="button" aria-label="Next photograph">&#8250;</button>
+    <p class="colleagues-lightbox__counter" aria-live="polite"></p>
+  </div>
+
+  <footer class="colleagues-footer">
+    <p class="colleagues-footer__logo">Shravek</p>
+    <p>Grateful for the people who make every chapter richer.</p>
+  </footer>
+
+  <script src="js/colleagues.js"></script>
+</body>
+</html>

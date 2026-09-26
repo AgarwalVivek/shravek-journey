@@ -9,6 +9,7 @@ Edit `js/data.js` to add your own:
 - **Travel adventures** — destinations with dates and descriptions
 - **Baby journey** — pregnancy/baby milestones
 - **Pregnancy story** — a dedicated month-by-month photo and video journey
+- **Friends & colleagues** — a dedicated gallery at `/colleagues`
 - **Gallery** — replace emoji placeholders with actual image paths
 
 The pregnancy story is available at `pregnancy.html`. Its optimized Azure media

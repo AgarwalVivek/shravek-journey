@@ -31,6 +31,7 @@
     <ul class="nav__links">
       <li><a href="#" onclick="navigateTo('timeline');return false">Timeline</a></li>
       <li><a href="#" onclick="navigateTo('travel');return false">Travel</a></li>
+      <li><a href="#" onclick="navigateTo('people');return false">People</a></li>
       <li><a href="#" onclick="navigateTo('baby');return false">Baby</a></li>
       <li><a href="pregnancy.html">Pregnancy</a></li>
       <!-- <li class="admin-only" style="display:none"><a href="#gallery">Gallery</a></li> -->
@@ -86,6 +87,28 @@
     <div class="travel-grid" id="travel-grid"></div>
     <div class="page-nav">
       <button class="btn btn--outline-light page-nav__btn" onclick="navigateTo('timeline')">← Our Timeline</button>
+      <button class="btn btn--rose page-nav__btn" onclick="navigateTo('people')">The People Beside Us →</button>
+    </div>
+  </section>
+
+  <!-- PEOPLE -->
+  <section class="section people-section page-section" id="people">
+    <div class="section__header">
+      <p class="section__eyebrow">Friends &amp; Colleagues</p>
+      <h2 class="section__title">The People Beside Us</h2>
+      <p class="section__desc">The friendships, teamwork, and everyday moments that became part of our wider story.</p>
+    </div>
+    <div class="people-preview" aria-label="Preview of our colleagues album">
+      <img src="https://shravekjourneyphotos.blob.core.windows.net/photos/colleagues/colleague-01.webp" alt="A moment with our colleagues" loading="lazy" decoding="async" />
+      <img src="https://shravekjourneyphotos.blob.core.windows.net/photos/colleagues/colleague-06.webp" alt="A portrait from our colleagues gathering" loading="lazy" decoding="async" />
+      <img src="https://shravekjourneyphotos.blob.core.windows.net/photos/colleagues/colleague-08.webp" alt="Friends and colleagues together" loading="lazy" decoding="async" />
+    </div>
+    <div class="people-story">
+      <p>Some chapters are shaped not only by where we went, but by the people who shared the journey with us.</p>
+      <a href="/colleagues" class="btn btn--rose">Meet the people beside us →</a>
+    </div>
+    <div class="page-nav">
+      <button class="btn btn--outline-light page-nav__btn" onclick="navigateTo('travel')">← Places We've Been</button>
       <button class="btn btn--rose page-nav__btn" onclick="navigateTo('baby')">Baby Journey →</button>
     </div>
   </section>
@@ -103,7 +126,7 @@
       <a href="pregnancy.html" class="btn btn--rose">Explore our month-by-month story →</a>
     </div>
     <div class="page-nav">
-      <button class="btn btn--outline-light page-nav__btn" onclick="navigateTo('travel')">← Places We've Been</button>
+      <button class="btn btn--outline-light page-nav__btn" onclick="navigateTo('people')">← The People Beside Us</button>
       <button class="btn btn--rose page-nav__btn" onclick="navigateTo('hero-section')">Back Home ↺</button>
     </div>
   </section>

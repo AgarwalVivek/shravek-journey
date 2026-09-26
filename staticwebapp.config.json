@@ -1,6 +1,10 @@
 {
   "routes": [
     {
+      "route": "/colleagues",
+      "rewrite": "/colleagues.html"
+    },
+    {
       "route": "/babyphotoshoot",
       "rewrite": "/babyphotoshoot.html"
     },
