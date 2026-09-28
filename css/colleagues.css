@@ -50,8 +50,8 @@ body {
   padding: 8rem clamp(1.5rem, 8vw, 7rem) 6rem;
   color: #fff;
   background:
-    linear-gradient(90deg, rgba(18, 23, 25, 0.82) 0%, rgba(18, 23, 25, 0.4) 58%, rgba(18, 23, 25, 0.18) 100%),
-    url('https://shravekjourneyphotos.blob.core.windows.net/photos/colleagues/2026-09-24/colleague-001.webp') center 42%/cover no-repeat;
+    linear-gradient(90deg, rgba(18, 23, 25, 0.82) 0%, rgba(18, 23, 25, 0.46) 52%, rgba(18, 23, 25, 0.2) 100%),
+    url('https://shravekjourneyphotos.blob.core.windows.net/photos/colleagues/people-beside-us-hero.webp') center 42%/cover no-repeat;
 }
 
 .colleagues-hero__content {
@@ -252,7 +252,7 @@ body {
   .colleagues-hero {
     min-height: 86vh;
     padding-bottom: 4rem;
-    background-position: 58% center;
+    background-position: 54% center;
   }
 
   .colleagues-lightbox {

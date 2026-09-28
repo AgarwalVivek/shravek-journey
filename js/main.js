@@ -248,8 +248,15 @@ function renderMediaTag(item, cssClass, alt) {
 function renderAlbumPhotos(album) {
   const photos = (journeyData.photos || []).filter(p => p.album === album);
   if (photos.length === 0) return '';
+  const albumRoutes = {
+    beginnings: '/beginnings',
+    'wedding-usa': '/wedding-usa',
+    'wedding-india': '/wedding-india',
+    'gender-reveal': '/gender-reveal'
+  };
+  const albumUrl = albumRoutes[album] || `album.html?album=${encodeURIComponent(album)}`;
   return `
-    <a href="album.html?album=${encodeURIComponent(album)}" class="btn btn--dark timeline-album-link">View Photos →</a>`;
+    <a href="${albumUrl}" class="btn btn--dark timeline-album-link">Explore This Album →</a>`;
 }
 
 // ── Render Gallery ───────────────────────────────────────

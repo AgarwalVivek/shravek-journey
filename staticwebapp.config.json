@@ -1,6 +1,22 @@
 {
   "routes": [
     {
+      "route": "/gender-reveal",
+      "rewrite": "/album.html"
+    },
+    {
+      "route": "/wedding-usa",
+      "rewrite": "/album.html"
+    },
+    {
+      "route": "/wedding-india",
+      "rewrite": "/album.html"
+    },
+    {
+      "route": "/beginnings",
+      "rewrite": "/album.html"
+    },
+    {
       "route": "/colleagues",
       "rewrite": "/colleagues.html"
     },
