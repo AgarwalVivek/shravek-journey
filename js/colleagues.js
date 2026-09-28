@@ -2,7 +2,7 @@
   'use strict';
 
   const baseUrl = 'https://shravekjourneyphotos.blob.core.windows.net/photos/colleagues/2026-09-24';
-  const photos = Array.from({ length: 200 }, (_, index) => ({
+  const photos = Array.from({ length: 55 }, (_, index) => ({
     url: `${baseUrl}/colleague-${String(index + 1).padStart(3, '0')}.webp`,
     alt: `Friends and colleagues memory ${index + 1}`
   }));
