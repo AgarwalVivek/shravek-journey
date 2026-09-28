@@ -74,22 +74,77 @@ function renderAll() {
 function renderTimeline() {
   const container = document.getElementById('timeline-container');
   const items = journeyData.timeline || [];
+  const photos = journeyData.photos || [];
 
   if (items.length === 0) {
     container.innerHTML = '<p style="color:var(--muted);text-align:center">Timeline coming soon...</p>';
     return;
   }
 
-  container.innerHTML = items.map(item => `
-    <div class="timeline-item">
-      <div class="timeline-item__icon">${item.icon || '✦'}</div>
-      <div class="timeline-item__date">${item.date || ''}</div>
-      <h3 class="timeline-item__title">${item.title}</h3>
-      <p class="timeline-item__desc">${item.description || ''}</p>
-      ${item.photoUrl ? `<img src="${item.photoUrl}" alt="${item.title}" class="timeline-item__photo" />` : ''}
-      ${item.album ? renderAlbumPhotos(item.album) : ''}
+  const beginnings = photos.filter(photo => photo.album === 'beginnings' && photo.url);
+  const curatedTimelinePhotos = {
+    'First Met': 'https://shravekjourneyphotos.blob.core.windows.net/photos/beginnings/couple-chicago-train-station.jpg',
+    'The Proposal': 'https://shravekjourneyphotos.blob.core.windows.net/photos/beginnings/couple-train.jpg',
+    'Married in USA': 'https://shravekjourneyphotos.blob.core.windows.net/photos/photos/usa-wedding/usa-wedding-001.jpg',
+    'Our First Car': 'https://shravekjourneyphotos.blob.core.windows.net/photos/beginnings/vivek-chicago.jpg',
+    'Married in India': 'https://shravekjourneyphotos.blob.core.windows.net/photos/photos/india-wedding/india-wedding-001.jpg',
+    'Baby on the Way!': 'https://shravekjourneyphotos.blob.core.windows.net/photos/pregnancy-journey/month-1/image-001.webp',
+    'Gender Reveal!': 'https://shravekjourneyphotos.blob.core.windows.net/photos/IMG_0337.jpg'
+  };
+  const fallbackPhotos = [
+    ...beginnings.map(photo => photo.url),
+    'https://shravekjourneyphotos.blob.core.windows.net/photos/pregnancy-journey/month-1/image-001.webp'
+  ];
+  function timelinePhoto(item, index) {
+    const albumCover = photos.find(photo => photo.album === item.album && photo.url);
+    return item.photoUrl ||
+      (albumCover && albumCover.url) ||
+      curatedTimelinePhotos[item.title] ||
+      fallbackPhotos[index % fallbackPhotos.length];
+  }
+
+  const chapters = items.map((item, index) => {
+    const photoUrl = timelinePhoto(item, index);
+    const chapterId = `timeline-chapter-${index + 1}`;
+
+    return `
+      <article class="timeline-item" id="${chapterId}">
+        <div class="timeline-item__media">
+          <img src="${photoUrl}" alt="${item.title}" loading="${index < 2 ? 'eager' : 'lazy'}" decoding="async" />
+          <span class="timeline-item__number">${String(index + 1).padStart(2, '0')}</span>
+        </div>
+        <div class="timeline-item__story">
+          <p class="timeline-item__chapter">Chapter ${String(index + 1).padStart(2, '0')}</p>
+          <p class="timeline-item__date">${item.date || ''}</p>
+          <h3 class="timeline-item__title">${item.title}</h3>
+          <p class="timeline-item__desc">${item.description || ''}</p>
+          ${item.album ? renderAlbumPhotos(item.album) : ''}
+        </div>
+      </article>
+    `;
+  }).join('');
+
+  const firstPhoto = timelinePhoto(items[0], 0);
+  const firstYear = String(items[0].date || '').match(/\d{4}/);
+  container.innerHTML = `
+    <div class="timeline-cover" style="--timeline-cover: url('${firstPhoto}')">
+      <div class="timeline-cover__content">
+        <p>Vivek &amp; Shraddha</p>
+        <h3>Every chapter<br /><em>led us here.</em></h3>
+        <span>${firstYear ? firstYear[0] : 'Our beginning'} — Today</span>
+      </div>
     </div>
-  `).join('');
+    <nav class="timeline-years" aria-label="Jump to a story chapter">
+      ${items.map((item, index) => `
+        <a href="#timeline-chapter-${index + 1}">
+          <span>${String(index + 1).padStart(2, '0')}</span>
+          ${item.date || item.title}
+        </a>
+      `).join('')}
+    </nav>
+    <div class="timeline-chapters">${chapters}</div>
+  `;
+
 }
 
 // ── Render Travel ────────────────────────────────────────

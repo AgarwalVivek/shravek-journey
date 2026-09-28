@@ -8,28 +8,49 @@ const JOURNEY_DATA = {
   // ── Timeline milestones ────────────────────────────────
   timeline: [
     {
-      date: '2020',
+      date: '2016',
       icon: '💕',
-      title: 'The Beginning',
-      description: 'Where our story started — two hearts, one journey.'
+      title: 'First Met',
+      description: 'Two strangers crossed paths in Bridgeport, Chicago — and everything changed.'
     },
     {
-      date: '2021',
+      date: '2017',
       icon: '💍',
-      title: 'Said Yes!',
+      title: 'The Proposal',
       description: 'The most magical moment — a promise of forever.'
     },
     {
-      date: '2022',
+      date: 'Jan 2021',
       icon: '🎊',
-      title: 'Tied the Knot',
-      description: 'Surrounded by love, we became one family.'
+      title: 'Married in USA',
+      description: "We said 'I do' and became one — officially starting our forever in America.",
+      album: 'wedding-usa'
     },
     {
-      date: '2024',
+      date: 'Jan 2021',
+      icon: '🚙',
+      title: 'Our First Car',
+      description: 'Our first set of wheels together — road trips and adventures awaited!'
+    },
+    {
+      date: 'Jul 2021',
+      icon: '🎊',
+      title: 'Married in India',
+      description: 'Celebrated our love with family and traditions back home in India.',
+      album: 'wedding-india'
+    },
+    {
+      date: '2025',
       icon: '👶',
       title: 'Baby on the Way!',
-      description: 'The most exciting news — our family is growing.'
+      description: 'The most exciting news — our family is growing! Baby girl arriving July 2026.'
+    },
+    {
+      date: 'Feb 2026',
+      icon: '🎀',
+      title: 'Gender Reveal!',
+      description: "The moment we found out — It's a GIRL! 💗 A day full of joy, surprises, and happy tears.",
+      album: 'gender-reveal'
     }
   ],
 
